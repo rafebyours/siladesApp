@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en" x-data="{ sidebarOpen: false, profileDropdownOpen: false }" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Lades Cibodas{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs" defer></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-blue': '#2563eb',
+                        'primary-green': '#10b981',
+                        'primary-yellow': '#facc15',
+                        'soft-blue': '#e0f2fe',
+                        'soft-green': '#d1fae5',
+                        'soft-yellow': '#fef9c3'
+                    },
+                    fontFamily: {
+                        sans: ['"Segoe UI"', 'Roboto', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Layout Structure */
+        .header-container {
+            height: 64px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 40;
+        }
+        
+        .sidebar-container {
+            position: fixed;
+            top: 64px;
+            bottom: 0;
+            left: 0;
+            z-index: 30;
+            width: 288px;
+            transition: width 0.3s;
+        }
+        
+        .sidebar-collapsed {
+            width: 80px;
+        }
+        
+        .main-content {
+            margin-top: 64px;
+            margin-left: 288px;
+            height: calc(100vh - 64px);
+            transition: margin-left 0.3s;
+        }
+        
+        .main-content-collapsed {
+            margin-left: 80px;
+        }
+        
+        /* Color Styles */
+        .gradient-bg {
+            background: white; 
+        }
+        
+        .sidebar-gradient {
+            background: white;
+            border-right: 1px solid rgba(0, 0, 0, 0.1);
+            height: 100%;
+        }
+        
+        .glass-effect {
+            backdrop-filter: blur(20px);
+            background: #009c57;
+        }
+        
+        /* Dropdown Styles */
+        .dropdown-menu {
+            position: absolute;
+            right: 0;
+            top: 100%;
+            margin-top: 0.5rem;
+            min-width: 180px;
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            z-index: 50;
+        }
+        
+        .dropdown-item {
+            padding: 0.5rem 1rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+        }
+        
+        .dropdown-item:hover {
+            background: #f3f4f6;
+        }
+        
+        /* Animations */
+        .floating-animation {
+            animation: float 8s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            33% { transform: translateY(-20px) rotate(3deg); }
+            66% { transform: translateY(-10px) rotate(-2deg); }
+        }
+        
+        /* Components */
+        .card-hover {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .nav-item {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+        
+        .nav-item:hover {
+            transform: translateX(8px);
+            background: rgba(37, 99, 235, 0.15);
+            border-radius: 12px;
+        }
+        
+        .nav-item.active {
+            background: rgba(37, 99, 235, 0.2);
+            border-left: 4px solid #2563eb;
+            transform: translateX(4px);
+            border-radius: 12px;
+        }
+        
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border-left: 12px solid rgba(37, 99, 235, 0.3);
+            border-top: 12px solid transparent;
+            border-bottom: 12px solid transparent;
+        }
+        
+        .sidebar-text {
+            color: #1f2937;
+        }
+        
+        .sidebar-text-secondary {
+            color: #6b7280;
+        }
+        
+        .emoji-bounce {
+            animation: emojiBounce 2s ease-in-out infinite;
+        }
+        
+        @keyframes emojiBounce {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-3px) scale(1.1); }
+        }
+        
+        .content-bg {
+            background: linear-gradient(135deg, 
+                rgba(224, 242, 254, 0.3) 0%,
+                rgba(209, 250, 229, 0.2) 33%,
+                rgba(254, 249, 195, 0.2) 66%,
+                rgba(240, 253, 244, 0.3) 100%);
+        }
+    </style>
+</head>
+<body class="h-full font-sans text-gray-800 relative" x-data="{ sidebarCollapsed: false }">
+    <!-- Floating Background Elements -->
+    <div class="fixed inset-0 pointer-events-none">
+        <div class="absolute top-20 left-20 w-32 h-32 bg-gradient-to-br from-blue-200 to-green-200 opacity-15 rounded-full floating-animation blur-xl"></div>
+        <div class="absolute bottom-20 right-20 w-24 h-24 bg-gradient-to-br from-yellow-200 to-blue-200 opacity-15 rounded-full floating-animation blur-xl" style="animation-delay: -3s;"></div>
+        <div class="absolute top-1/2 left-10 w-16 h-16 bg-gradient-to-br from-green-200 to-yellow-200 opacity-15 rounded-full floating-animation blur-xl" style="animation-delay: -6s;"></div>
+        <div class="absolute top-1/3 right-1/4 w-20 h-20 bg-gradient-to-br from-blue-100 to-green-100 opacity-10 rounded-full floating-animation blur-lg" style="animation-delay: -9s;"></div>
+    </div>
+
+    <!-- HEADER -->
+    <div class="header-container">
+        <header class="glass-effect border-b border-white border-opacity-30 shadow-sm w-full">
+            <div class="flex items-center justify-between px-6 py-4 h-full">
+                <!-- Logo + Toggle Sidebar -->
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-3">
+                        <img src="/static/logoo.png" alt="Logo" class="h-10 w-auto" />
+                        <h1 class="text-2xl font-bold text-white">Lades Cibodas</h1>
+                    </div>
+                    <button @click="sidebarOpen = !sidebarOpen" class="p-2 rounded-lg text-white hover:bg-white hover:bg-opacity-20 lg:hidden transition-all duration-200 hover:scale-110" aria-label="Toggle Sidebar">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Profile Dropdown -->
+                <div class="relative" x-data="{ open: false }">
+                    <button @click="open = !open" class="flex items-center space-x-3 focus:outline-none">
+                        <div class="hidden md:block text-right">
+                            <p class="text-sm font-medium text-white flex items-center justify-end">
+                                <span class="mr-1">👋</span> Halo Admin
+                            </p>
+                            <p class="text-xs text-white text-opacity-80 flex items-center justify-end">
+                                <span class="mr-1">👤</span>
+                                {% if admin and admin.nama %}
+                                    {{ admin.nama }}
+                                {% else %}
+                                    Administrator
+                                {% endif %}
+                            </p>
+                        </div>
+
+                        {% if admin and admin.foto_admin %}
+                            <img src="{{ admin.foto_admin }}" alt="Foto Profil" class="w-12 h-12 rounded-full object-cover shadow-md hover:scale-110 transition-transform duration-200" />
+                        {% else %}
+                            <div class="w-12 h-12 bg-primary-blue rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform duration-200">
+                                <span class="text-white font-bold text-lg">
+                                    {% if admin and admin.nama %}
+                                        {{ admin.nama[0] | upper }}
+                                    {% elif admin and admin.email %}
+                                        {{ admin.email[0] | upper }}
+                                    {% else %}
+                                        A
+                                    {% endif %}
+                                </span>
+                            </div>
+                        {% endif %}
+                    </button>
+
+                    <!-- Dropdown Menu -->
+                    <div x-show="open" 
+                         @click.away="open = false"
+                         x-transition:enter="transition ease-out duration-100"
+                         x-transition:enter-start="transform opacity-0 scale-95"
+                         x-transition:enter-end="transform opacity-100 scale-100"
+                         x-transition:leave="transition ease-in duration-75"
+                         x-transition:leave-start="transform opacity-100 scale-100"
+                         x-transition:leave-end="transform opacity-0 scale-95"
+                         class="dropdown-menu">
+                        <a href="{{ url_for('admin_profile') }}" class="dropdown-item">
+                            <span class="mr-2">👤</span> Lihat Profil
+                        </a>
+                        <a href="{{ url_for('logout') }}" class="dropdown-item">
+                            <span class="mr-2">🚪</span> Keluar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </header>
+    </div>
+
+    <!-- Off-canvas backdrop -->
+    <div x-show="sidebarOpen" 
+         x-transition:enter="transition-opacity ease-linear duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition-opacity ease-linear duration-300"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-20 bg-black bg-opacity-50 lg:hidden" 
+         @click="sidebarOpen = false"></div>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar-container" :class="{ 'sidebar-collapsed': sidebarCollapsed }">
+        <aside
+            :class="[
+                sidebarOpen ? 'translate-x-0' : '-translate-x-full',
+                'transition duration-300 transform lg:translate-x-0 h-full'
+            ]"
+        >
+            <div class="h-full sidebar-gradient shadow-2xl flex flex-col justify-between">
+                <!-- Navigation -->
+                <nav :class="sidebarCollapsed ? 'px-4 py-6 space-y-2' : 'px-6 py-6 space-y-2'" class="space-y-2">
+                    {% set nav_items = [
+                        ('admin_dashboard', '🏠', 'Dashboard', 'primary-blue/10'),
+                        ('admin_users', '👥', 'Data User', 'gray-100'),
+                        ('admin_feedback', '💬', 'Feedback', 'pink-100'),
+                        ('admin_legalisir', '📄', 'Legalisir', 'blue-100'),
+                        ('admin_pengajuan_surat', '📬', 'Pengajuan Surat', 'purple-100'),
+                        ('admin_pengaduan', '📣', 'Pengaduan', 'red-100'),
+                        ('admin_pengumuman', '📢', 'Pengumuman', 'yellow-100')
+                    ] %}
+                    {% for url, icon, label, color in nav_items %}
+                        <a href="{{ url_for(url) }}"
+                           class="nav-item flex items-center py-2 px-3 rounded-xl sidebar-text transition 
+                           {% if request.endpoint == url %}active{% endif %} 
+                           hover:bg-{{ color }}"
+                           :class="sidebarCollapsed ? 'justify-center px-2' : 'space-x-3 px-4'"
+                           :title="sidebarCollapsed ? '{{ label }}' : ''">
+                            <span class="text-xl emoji-bounce">{{ icon }}</span>
+                            <span x-show="!sidebarCollapsed" x-transition class="font-medium text-sm">{{ label }}</span>
+                        </a>
+                    {% endfor %}
+                </nav>
+
+                <!-- Only Toggle Sidebar Button Remains -->
+                <div class="px-6 pb-4">
+                    <button @click="sidebarCollapsed = !sidebarCollapsed"
+                            :class="[
+                                'w-full flex items-center py-3 rounded-xl sidebar-text hover:bg-white hover:bg-opacity-30 transition-all duration-200',
+                                sidebarCollapsed ? 'justify-center px-2' : 'space-x-3 px-4'
+                            ]">
+                        <span class="text-xl" x-text="sidebarCollapsed ? '➡️' : '⬅️'"></span>
+                        <span x-show="!sidebarCollapsed" x-transition class="font-medium text-sm">
+                            Sembunyikan Menu
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content" :class="{ 'main-content-collapsed': sidebarCollapsed }">
+        <main class="flex-1 overflow-y-auto content-bg">
+            <div class="p-6">
+                {% block content %}
+                <!-- Konten halaman akan dimasukkan di sini -->
+                <div class="text-center py-20">
+                    <div class="text-6xl mb-4 emoji-bounce">🏘️</div>
+                    <h1 class="text-3xl font-bold bg-gradient-to-r from-primary-blue to-primary-green bg-clip-text text-transparent mb-2">
+                        Lades Cibodas
+                    </h1>
+                    <p class="text-gray-600 flex items-center justify-center">
+                        <span class="mr-2">💻</span>
+                        Layanan Digital Desa Cibodas
+                        <span class="ml-2">✨</span>
+                    </p>
+                </div>
+                {% endblock %}
+            </div>
+        </main>
+    </div>
+</body>
+</html>

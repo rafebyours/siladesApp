@@ -1,0 +1,521 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- Header Section -->
+<div class="mb-8">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold bg-gradient-to-r from-primary-blue to-primary-green bg-clip-text text-black">
+                Profil Pengguna
+            </h1>
+            <p class="text-gray-600 mt-1">Kelola informasi personal dan dokumen identitas Anda</p>
+        </div>
+        <div class="flex items-center">
+           <button id="toggleEditMode" class="bg-gradient-to-r from-blue-500 to-green-500 text-white px-6 py-3 rounded-full hover:shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center font-semibold">
+    <span class="text-xl mr-2">✏️</span>
+    <span id="editButtonText">Edit Profil</span>
+</button>
+
+        </div>
+    </div>
+</div>
+
+<!-- Notification Area -->
+<div id="notification" class="hidden mb-6"></div>
+
+<!-- Pesan flash -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="mb-6 p-4 rounded-lg flex items-center {{ 
+          'bg-green-100 text-green-800 border border-green-200' if category == 'success' else 
+          'bg-red-100 text-red-800 border border-red-200' if category == 'error' else
+          'bg-yellow-100 text-yellow-800 border border-yellow-200' }}">
+        <span class="mr-2">{{ 
+          '✅' if category == 'success' else 
+          '❌' if category == 'error' else 
+          '⚠️' }}</span>
+        <span class="font-medium">{{ message }}</span>
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+<!-- Profile Content -->
+<div class="flex justify-center px-4">
+    <div class="w-full max-w-4xl">
+        <form id="profileForm" method="POST" enctype="multipart/form-data" class="space-y-6" onsubmit="handleFormSubmit(event)">
+
+            <!-- Personal Information -->
+<div class="bg-white rounded-2xl shadow-lg border border-gray-100">
+    <div class="p-6 border-b border-gray-100">
+        <h2 class="text-xl font-bold text-gray-800 flex items-center">
+            <span class="text-2xl mr-2">👤</span>
+            Informasi Personal
+        </h2>
+        <p class="text-gray-600 mt-1">Data pribadi dan identitas diri Anda</p>
+    </div>
+    
+    <div class="p-6">
+        <!-- Foto Profil di bagian atas -->
+        <div class="flex justify-center mb-8">
+            <div class="relative">
+                {% if user.foto_profil %}
+                    <img src="{{ user.foto_profil }}" 
+                         alt="Foto Profil" 
+                         class="w-40 h-40 rounded-full object-cover border-4 border-blue-200 shadow-lg">
+                {% else %}
+                    <div class="w-40 h-40 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center border-4 border-blue-200 shadow-lg">
+                        <span class="text-5xl text-blue-400">👤</span>
+                    </div>
+                {% endif %}
+                <div class="edit-mode-only absolute bottom-0 right-0 bg-blue-500 rounded-full p-2" style="display: none;">
+                    <span class="text-white text-sm">📷</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload foto profil di edit mode -->
+        <div class="edit-mode-only mb-6" style="display: none;">
+            <div class="bg-blue-50 rounded-xl p-4 border border-blue-200">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Foto Profil</label>
+                <input type="file" name="foto_profil" accept="image/*" 
+                       class="w-full px-4 py-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white">
+                <p class="text-xs text-gray-500 mt-2">Format yang didukung: JPG, PNG (Max. 2MB)</p>
+            </div>
+        </div>
+        
+        <!-- Container pembungkus semua form input -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border border-blue-200 rounded-xl p-4 bg-blue-50">
+            <!-- Nama Lengkap -->
+            <div class="p-2">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Nama Lengkap</label>
+                <div class="view-mode">
+                    <p class="text-gray-900 py-3 px-4 bg-white rounded-lg border border-blue-200 font-medium">{{ user.nama_lengkap or '-' }}</p>
+                </div>
+                <div class="edit-mode-only" style="display: none;">
+                    <input type="text" name="nama_lengkap" value="{{ user.nama_lengkap }}" 
+                           class="w-full px-4 py-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white" required>
+                </div>
+            </div>
+
+            <!-- Email -->
+            <div class="p-2">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Email</label>
+                <div class="view-mode">
+                    <p class="text-gray-900 py-3 px-4 bg-white rounded-lg border border-blue-200 font-medium">{{ user.email or '-' }}</p>
+                </div>
+                <div class="edit-mode-only" style="display: none;">
+                    <input type="email" name="email" value="{{ user.email }}" 
+                           class="w-full px-4 py-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white" required>
+                </div>
+            </div>
+
+            <!-- NIK -->
+            <div class="p-2">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">NIK</label>
+                <div class="view-mode">
+                    <p class="text-gray-900 py-3 px-4 bg-white rounded-lg border border-blue-200 font-medium">{{ user.nik or '-' }}</p>
+                </div>
+                <div class="edit-mode-only" style="display: none;">
+                    <input type="text" name="nik" value="{{ user.nik }}" 
+                           class="w-full px-4 py-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white" required>
+                </div>
+            </div>
+
+            <!-- Tempat Lahir -->
+            <div class="p-2">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Tempat Lahir</label>
+                <div class="view-mode">
+                    <p class="text-gray-900 py-3 px-4 bg-white rounded-lg border border-blue-200 font-medium">{{ user.tempat_lahir or '-' }}</p>
+                </div>
+                <div class="edit-mode-only" style="display: none;">
+                    <input type="text" name="tempat_lahir" value="{{ user.tempat_lahir }}" 
+                           class="w-full px-4 py-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white">
+                </div>
+            </div>
+
+            <!-- Tanggal Lahir -->
+            <div class="p-2">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Tanggal Lahir</label>
+                <div class="view-mode">
+                    <p class="text-gray-900 py-3 px-4 bg-white rounded-lg border border-blue-200 font-medium">{{ user.tanggal_lahir or '-' }}</p>
+                </div>
+                <div class="edit-mode-only" style="display: none;">
+                    <input type="date" name="tanggal_lahir" value="{{ user.tanggal_lahir }}" 
+                           class="w-full px-4 py-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white">
+                </div>
+            </div>
+
+            <!-- Jenis Kelamin -->
+            <div class="p-">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Jenis Kelamin</label>
+                <div class="view-mode">
+                    <p class="text-gray-900 py-3 px-4 bg-white rounded-lg border border-blue-200 font-medium">{{ user.jenis_kelamin or '-' }}</p>
+                </div>
+                <div class="edit-mode-only" style="display: none;">
+                    <select name="jenis_kelamin" class="w-full px-4 py-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white">
+                        <option value="Laki-laki" {% if user.jenis_kelamin == 'Laki-laki' %}selected{% endif %}>Laki-laki</option>
+                        <option value="Perempuan" {% if user.jenis_kelamin == 'Perempuan' %}selected{% endif %}>Perempuan</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Password (Edit mode only) -->
+        <div class="edit-mode-only mt-6" style="display: none;">
+            <div class="bg-blue-50 rounded-xl p-4 border border-blue-200">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Password Baru</label>
+                <input type="password" name="password" 
+                       class="w-full px-4 py-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white"
+                       placeholder="Kosongkan jika tidak ingin mengubah password">
+                <p class="text-xs text-gray-500 mt-2">Kosongkan jika tidak ingin mengubah password</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Address Information -->
+<div class="bg-white rounded-2xl shadow-lg border border-gray-100">
+    <div class="p-6 border-b border-gray-100">
+        <h2 class="text-xl font-bold text-gray-800 flex items-center">
+            <span class="text-2xl mr-2">🏠</span>
+            Informasi Alamat
+        </h2>
+        <p class="text-gray-600 mt-1">Alamat lengkap tempat tinggal Anda</p>
+    </div>
+
+    <!-- Kotak hijau besar yang membungkus semua input -->
+    <div class="p-6">
+        <div class="bg-green-50 rounded-xl p-6 border border-green-200 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Baris 1 -->
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Alamat Jalan</label>
+                <div class="view-mode">
+                    <p class="text-gray-900 py-3 px-4 bg-white rounded-lg border border-green-200 font-medium">{{ user.alamat_jalan or '-' }}</p>
+                </div>
+                <div class="edit-mode-only" style="display: none;">
+                    <input type="text" name="alamat_jalan" value="{{ user.alamat_jalan }}" 
+                           class="w-full px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">RT/RW</label>
+                <div class="view-mode">
+                    <p class="text-gray-900 py-3 px-4 bg-white rounded-lg border border-green-200 font-medium">{{ user.rt_rw or '-' }}</p>
+                </div>
+                <div class="edit-mode-only" style="display: none;">
+                    <input type="text" name="rt_rw" value="{{ user.rt_rw }}" 
+                           class="w-full px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white">
+                </div>
+            </div>
+
+            <!-- Baris 2 -->
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Desa</label>
+                <div class="view-mode">
+                    <p class="text-gray-900 py-3 px-4 bg-white rounded-lg border border-green-200 font-medium">{{ user.desa or '-' }}</p>
+                </div>
+                <div class="edit-mode-only" style="display: none;">
+                    <input type="text" name="desa" value="{{ user.desa }}" 
+                           class="w-full px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Kecamatan</label>
+                <div class="view-mode">
+                    <p class="text-gray-900 py-3 px-4 bg-white rounded-lg border border-green-200 font-medium">{{ user.kecamatan or '-' }}</p>
+                </div>
+                <div class="edit-mode-only" style="display: none;">
+                    <input type="text" name="kecamatan" value="{{ user.kecamatan }}" 
+                           class="w-full px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white">
+                </div>
+            </div>
+
+            <!-- Baris 3 -->
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Kabupaten</label>
+                <div class="view-mode">
+                    <p class="text-gray-900 py-3 px-4 bg-white rounded-lg border border-green-200 font-medium">{{ user.kabupaten or '-' }}</p>
+                </div>
+                <div class="edit-mode-only" style="display: none;">
+                    <input type="text" name="kabupaten" value="{{ user.kabupaten }}" 
+                           class="w-full px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Provinsi</label>
+                <div class="view-mode">
+                    <p class="text-gray-900 py-3 px-4 bg-white rounded-lg border border-green-200 font-medium">{{ user.provinsi or '-' }}</p>
+                </div>
+                <div class="edit-mode-only" style="display: none;">
+                    <input type="text" name="provinsi" value="{{ user.provinsi }}" 
+                           class="w-full px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+            <!-- Additional Information -->
+<div class="bg-white rounded-2xl shadow-lg border border-gray-100">
+    <div class="p-6 border-b border-gray-100">
+        <h2 class="text-xl font-bold text-gray-800 flex items-center">
+            <span class="text-2xl mr-2">ℹ️</span>
+            Informasi Tambahan
+        </h2>
+        <p class="text-gray-600 mt-1">Data pelengkap profil Anda</p>
+    </div>
+
+    <!-- Bungkus ungu untuk seluruh form -->
+    <div class="bg-purple-50 rounded-xl p-6 border border-purple-200 mx-6 my-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Agama -->
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Agama</label>
+                <div class="view-mode">
+                    <p class="text-gray-900 py-3 px-4 bg-white rounded-lg border border-purple-200 font-medium">{{ user.agama or '-' }}</p>
+                </div>
+                <div class="edit-mode-only" style="display: none;">
+                    <input type="text" name="agama" value="{{ user.agama }}" 
+                           class="w-full px-4 py-3 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all bg-white">
+                </div>
+            </div>
+
+            <!-- Status Perkawinan -->
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Status Perkawinan</label>
+                <div class="view-mode">
+                    <p class="text-gray-900 py-3 px-4 bg-white rounded-lg border border-purple-200 font-medium">{{ user.status_perkawinan or '-' }}</p>
+                </div>
+                <div class="edit-mode-only" style="display: none;">
+                    <input type="text" name="status_perkawinan" value="{{ user.status_perkawinan }}" 
+                           class="w-full px-4 py-3 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all bg-white">
+                </div>
+            </div>
+
+            <!-- Pekerjaan -->
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Pekerjaan</label>
+                <div class="view-mode">
+                    <p class="text-gray-900 py-3 px-4 bg-white rounded-lg border border-purple-200 font-medium">{{ user.pekerjaan or '-' }}</p>
+                </div>
+                <div class="edit-mode-only" style="display: none;">
+                    <input type="text" name="pekerjaan" value="{{ user.pekerjaan }}" 
+                           class="w-full px-4 py-3 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all bg-white">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Document Section -->
+<div class="bg-white rounded-2xl shadow-lg border border-gray-100">
+  <div class="p-6 border-b border-gray-100">
+    <h2 class="text-xl font-bold text-gray-800 flex items-center">
+      <span class="text-2xl mr-2">📄</span>
+      Dokumen Identitas
+    </h2>
+    <p class="text-gray-600 mt-1">Upload dan kelola dokumen identitas Anda</p>
+  </div>
+
+  <div class="p-6 space-y-6">
+    <!-- Foto KTP -->
+    <div class="bg-orange-50 rounded-xl p-6 border border-orange-200">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+          <span class="mr-2">🪪</span>
+          Foto KTP
+        </h3>
+        <button type="button" onclick="toggleImage('ktpContainer', 'ktpToggleText')" 
+          class="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-4 py-2 rounded-full hover:shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center text-sm font-semibold">
+          <span class="mr-1">👁️</span>
+          <span id="ktpToggleText">Lihat KTP</span>
+        </button>
+      </div>
+      <div id="ktpContainer" style="display: none;" class="mb-4 flex justify-center">
+        {% if user.foto_ktp %}
+          <img src="{{ user.foto_ktp }}" 
+            alt="Foto KTP" 
+            class="max-w-xs max-h-[200px] h-auto border-2 border-orange-300 rounded-lg shadow-lg">
+        {% else %}
+          <p class="text-orange-600 font-medium mt-2">Belum ada foto KTP yang diupload</p>
+        {% endif %}
+      </div>
+      <div class="edit-mode-only mt-4" style="display: none;">
+        <label class="block text-sm font-semibold text-gray-700 mb-2">Upload Foto KTP</label>
+        <input type="file" name="foto_ktp" accept="image/*" 
+          class="w-full px-4 py-3 border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all bg-white">
+        <p class="text-xs text-gray-500 mt-2">Format yang didukung: JPG, PNG (Max. 5MB)</p>
+      </div>
+    </div>
+
+    <!-- Foto KK -->
+    <div class="bg-orange-50 rounded-xl p-6 border border-orange-200">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+          <span class="mr-2">👨‍👩‍👧‍👦</span>
+          Foto Kartu Keluarga
+        </h3>
+        <button type="button" onclick="toggleImage('kkContainer', 'kkToggleText')" 
+          class="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-4 py-2 rounded-full hover:shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center text-sm font-semibold">
+          <span class="mr-1">👁️</span>
+          <span id="kkToggleText">Lihat KK</span>
+        </button>
+      </div>
+      <div id="kkContainer" style="display: none;" class="mb-4 flex justify-center">
+        {% if user.foto_kk %}
+          <img src="{{ user.foto_kk }}" 
+            alt="Foto KK" 
+            class="max-w-xs max-h-[200px] h-auto border-2 border-orange-300 rounded-lg shadow-lg">
+        {% else %}
+          <p class="text-orange-600 font-medium mt-2">Belum ada foto KK yang diupload</p>
+        {% endif %}
+      </div>
+      <div class="edit-mode-only mt-4" style="display: none;">
+        <label class="block text-sm font-semibold text-gray-700 mb-2">Upload Foto Kartu Keluarga</label>
+        <input type="file" name="foto_kk" accept="image/*" 
+          class="w-full px-4 py-3 border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all bg-white">
+        <p class="text-xs text-gray-500 mt-2">Format yang didukung: JPG, PNG (Max. 5MB)</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toggle Image Script -->
+<script>
+  function toggleImage(containerId, toggleTextId) {
+    const container = document.getElementById(containerId);
+    const toggleText = document.getElementById(toggleTextId);
+
+    const isVisible = container.style.display === 'flex';
+    container.style.display = isVisible ? 'none' : 'flex';
+    toggleText.textContent = isVisible
+      ? `Lihat ${containerId.includes('ktp') ? 'KTP' : 'KK'}`
+      : 'Sembunyikan';
+  }
+</script>
+
+            <!-- Account Status -->
+            <div class="bg-white rounded-2xl shadow-lg border border-gray-100">
+                <div class="p-6 border-b border-gray-100">
+                    <h2 class="text-xl font-bold text-gray-800 flex items-center">
+                        <span class="text-2xl mr-2">⚙️</span>
+                        Status Akun
+                    </h2>
+                    <p class="text-gray-600 mt-1">Informasi status dan aktivitas akun Anda</p>
+                </div>
+                
+                <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Status Akun</label>
+                        <p class="text-gray-900 py-3 px-4 bg-white rounded-lg border border-gray-200 font-medium">{{ user.status_akun or '-' }}</p>
+                    </div>
+                    
+                    <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Dibuat pada</label>
+                        <p class="text-gray-900 py-3 px-4 bg-white rounded-lg border border-gray-200 font-medium">{{ user.created_at.strftime('%d %b %Y, %H:%M') if user.created_at else '-' }}</p>
+                    </div>
+                    
+                    <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Terakhir diperbarui</label>
+                        <p class="text-gray-900 py-3 px-4 bg-white rounded-lg border border-gray-200 font-medium">{{ user.updated_at.strftime('%d %b %Y, %H:%M') if user.updated_at else '-' }}</p>
+                    </div>
+                </div>
+            </div>
+
+        <!-- Action Buttons -->
+<div class="edit-mode-only w-full pt-4 hidden">
+  <div class="flex justify-end items-center gap-4">
+    <!-- Tombol Batal -->
+    <button
+      type="button"
+      id="cancelEdit"
+      class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium shadow"
+    >
+      ❌ Batal
+    </button>
+
+    <!-- Tombol Simpan -->
+    <button
+  type="submit"
+  class="px-4 py-2 bg-gradient-to-r from-blue-500 to-green-500 text-white rounded-lg hover:shadow-lg transform hover:scale-105 transition-all duration-200 font-medium shadow flex items-center"
+>
+  💾 Simpan Perubahan
+</button>
+  </div>
+</div>
+
+    </form>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const toggleEditBtn = document.getElementById('toggleEditMode');
+        const editButtonText = document.getElementById('editButtonText');
+        const cancelEditBtn = document.getElementById('cancelEdit');
+        const viewModeElements = document.querySelectorAll('.view-mode');
+        const editModeElements = document.querySelectorAll('.edit-mode-only');
+        const toggleKTPBtn = document.getElementById('toggleKTP');
+        const toggleKKBtn = document.getElementById('toggleKK');
+        const ktpImage = document.getElementById('ktpImage');
+        const kkImage = document.getElementById('kkImage');
+        const ktpToggleText = document.getElementById('ktpToggleText');
+        const kkToggleText = document.getElementById('kkToggleText');
+        
+        let isEditMode = false;
+        
+        function toggleEditMode() {
+            isEditMode = !isEditMode;
+            
+            if (isEditMode) {
+                // Switch to edit mode
+                viewModeElements.forEach(el => el.style.display = 'none');
+                editModeElements.forEach(el => el.style.display = 'block');
+                editButtonText.textContent = 'Batal Edit';
+                toggleEditBtn.className = toggleEditBtn.className.replace('bg-primary-blue hover:bg-blue-700', 'bg-red-500 hover:bg-red-600');
+            } else {
+                // Switch to view mode
+                viewModeElements.forEach(el => el.style.display = 'block');
+                editModeElements.forEach(el => el.style.display = 'none');
+                editButtonText.textContent = 'Edit Profil';
+                toggleEditBtn.className = toggleEditBtn.className.replace('bg-red-500 hover:bg-red-600', 'bg-primary-blue hover:bg-blue-700');
+            }
+        }
+        
+        toggleEditBtn.addEventListener('click', toggleEditMode);
+        cancelEditBtn.addEventListener('click', toggleEditMode);
+        
+        // Toggle KTP image
+        if (toggleKTPBtn) {
+            toggleKTPBtn.addEventListener('click', function() {
+                const isVisible = ktpImage.style.display !== 'none';
+                ktpImage.style.display = isVisible ? 'none' : 'block';
+                ktpToggleText.textContent = isVisible ? 'Lihat KTP' : 'Sembunyikan KTP';
+            });
+        }
+        
+        // Toggle KK image
+        if (toggleKKBtn) {
+            toggleKKBtn.addEventListener('click', function() {
+                const isVisible = kkImage.style.display !== 'none';
+                kkImage.style.display = isVisible ? 'none' : 'block';
+                kkToggleText.textContent = isVisible ? 'Lihat KK' : 'Sembunyikan KK';
+            });
+        }
+    });
+</script>
+
+<style>
+    .card-hover {
+        transition: all 0.3s ease;
+    }
+    .card-hover:hover {
+        transform: translateY(-2px);
+    }
+</style>
+{% endblock %}

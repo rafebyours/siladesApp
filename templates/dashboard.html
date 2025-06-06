@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block content %}
+<!-- Header Section -->
+<div class="mb-8 bg-white">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold bg-gradient-to-r from-primary-blue to-primary-green bg-clip-text text-black">
+            Dashboard
+            </h1>
+            <p class="text-gray-600 mt-1">Selamat datang di Layanan Digital Desa Cibodas</p>
+        </div>
+        <div class="hidden md:flex items-center space-x-2 bg-[#009c57] rounded-full px-4 py-2 text-white">
+            <span class="text-sm font-medium" id="current-date"></span>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="bg-green-100/50 rounded-2xl shadow-md border border-gray-200 p-6 mb-8">
+    <h3 class="text-xl font-bold text-black mb-4 flex items-center">
+        Aksi Cepat
+    </h3>
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <!-- Ajukan Surat -->
+        <a href="/pengajuan-surat" class="card-hover flex flex-col items-center p-4 bg-white/50 border border-green-200 rounded-xl hover:bg-green-200/40 hover:shadow-md transition-all">
+
+            <span class="text-3xl mb-2">📄</span>
+            <span class="text-sm font-medium text-center text-[#009c57]">Ajukan Surat</span>
+        </a>
+        <!-- Legalisir -->
+        <a href="/legalisir" class="card-hover flex flex-col items-center p-4 bg-white border border-white rounded-xl hover:shadow-md transition-all">
+            <span class="text-3xl mb-2">📁</span>
+            <span class="text-sm font-medium text-center text-[#009c57]">Legalisir</span>
+        </a>
+        <!-- Pengaduan -->
+        <a href="/pengaduan" class="card-hover flex flex-col items-center p-4 bg-white border border-white rounded-xl hover:shadow-md transition-all">
+            <span class="text-3xl mb-2">📣</span>
+            <span class="text-sm font-medium text-center text-[#009c57]">Pengaduan</span>
+        </a>
+        <!-- Feedback -->
+        <a href="/feedback" class="card-hover flex flex-col items-center p-4 bg-white border border-white rounded-xl hover:shadow-md transition-all">
+            <span class="text-3xl mb-2">💬</span>
+            <span class="text-sm font-medium text-center text-[#009c57]">Feedback</span>
+        </a>
+        <!-- Profil -->
+        <a href="/profile" class="card-hover flex flex-col items-center p-4 bg-white border border-white rounded-xl hover:shadow-md transition-all">
+            <span class="text-3xl mb-2">👤</span>
+            <span class="text-sm font-medium text-center text-[#009c57]">Profil</span>
+        </a>
+    </div>
+</div>
+
+<!-- Pengumuman Section -->
+<div class="bg-green-100/50 rounded-2xl shadow-md border border-gray-200">
+    <div class="p-6 border-b border-gray-200">
+        <h3 class="text-xl font-bold text-[#009c57] flex items-center">
+            <span class="text-2xl mr-2">📢</span>
+            Pengumuman Terbaru
+        </h3>
+    </div>
+
+
+    {% if pengumuman %}
+    <div class="divide-y divide-white/20">
+        {% for p in pengumuman %}
+        <div class="card-hover flex flex-col p-4 bg-white border border-green-200 rounded-xl hover:bg-green-200/40 hover:shadow-md transition-all p-4 mb-8">
+            <div class="flex justify-between items-start mb-3">
+                <h4 class="text-lg font-semibold text-gray-800 flex-1">{{ p.judul }}</h4>
+                <div class="flex items-center text-sm text-black/80 ml-4">
+                    <span class="mr-1">🕒</span>
+                    {{ p.created_at.strftime('%d %b %Y') if p.created_at else 'Tanggal tidak tersedia' }}
+                </div>
+            </div>
+
+            <p class="text-gray-700 mb-4 leading-relaxed">{{ p.isi }}</p>
+
+            {% if p.file_lampiran %}
+            <div class="flex items-center space-x-2">
+                <a href="/download/pengumuman/{{ p.file_lampiran }}" 
+                   class="inline-flex items-center px-4 py-2 bg-green-100 text-[#009c57] rounded-lg hover:bg-white/90 transition-colors text-sm font-medium">
+                    <span class="mr-2">📎</span>
+                    Lihat Lampiran
+                </a>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="p-12 text-center text-gray-600">
+        <div class="text-6xl mb-4">📭</div>
+        <h4 class="text-lg font-medium mb-2">Belum Ada Pengumuman</h4>
+        <p class="text-white/80">Pengumuman terbaru akan ditampilkan di sini</p>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    // Display current date
+    document.addEventListener('DOMContentLoaded', function() {
+        const dateElement = document.getElementById('current-date');
+        if (dateElement) {
+            const now = new Date();
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            };
+            dateElement.textContent = now.toLocaleDateString('id-ID', options);
+        }
+    });
+</script>
+
+<style>
+    body {
+        background-color: white;
+    }
+
+    .card-hover {
+        background-color: rgba(255, 255, 255, 0.5);
+        border: 1px solid #a7f3d0; /* Tailwind green-200 */
+        transition: all 0.3s ease;
+    }
+    .card-hover:hover {
+        background-color: rgba(34, 197, 94, 0.2); /* Tailwind green-500/20 */
+        transform: translateY(-2px);
+    }
+    .nav-item {
+        background-color: rgba(0, 0, 0, 0.03); /* abu samar */
+        transition: all 0.3s ease;
+        position: relative;
+    }
+
+    .nav-item:hover {
+        background-color: #e6f7ef; /* hijau hover samar */
+        transform: translateX(4px);
+    }
+
+    .nav-item.active {
+        background-color: #009c57 !important; /* hijau aktif */
+        color: white !important;
+        transform: translateX(4px);
+        border-radius: 12px;
+    }
+
+    .nav-item.active span,
+    .nav-item.active .emoji-bounce {
+        color: white !important;
+    }
+    .announcement-item {
+        background-color: rgba(255, 255, 255, 0.5);
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 1rem;
+        transition: box-shadow 0.3s ease, background-color 0.3s ease;
+    }
+    .announcement-item:hover {
+        background-color: rgba(34, 197, 94, 0.2); /* hijau transparan hover */
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+    }
+
+</style>
+{% endblock %}

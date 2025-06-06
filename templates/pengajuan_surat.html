@@ -1,0 +1,342 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<!-- Header Section -->
+<div class="mb-8">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold bg-gradient-to-r from-primary-blue to-primary-green bg-clip-text text-black">
+                Pengajuan Surat
+            </h1>
+            <p class="text-gray-600 mt-1">Kelola dan ajukan surat kebutuhan Anda</p>
+        </div>
+        <!-- Tombol Ajukan Surat -->
+        <div class="flex items-center">
+            <button onclick="scrollToForm()" 
+                    class="bg-gradient-to-r from-blue-500 to-green-500 text-white px-6 py-3 rounded-full hover:shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center font-semibold">
+                <span class="text-xl mr-2">📝</span>
+                Ajukan Surat
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Notification Area -->
+<div id="notification" class="hidden mb-6"></div>
+
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="mb-6 p-4 rounded-lg {% if category == 'success' %}bg-green-100 text-green-800 border border-green-200{% elif category == 'danger' %}bg-red-100 text-red-800 border border-red-200{% else %}bg-blue-100 text-blue-800 border border-blue-200{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<!-- Tabel Daftar Pengajuan -->
+<div class="bg-white rounded-2xl shadow-lg border border-gray-100 mb-8">
+    <div class="p-6 border-b border-gray-100">
+        <h2 class="text-xl font-bold text-gray-800 flex items-center">
+            <span class="text-2xl mr-2">📋</span>
+            Daftar Pengajuan Surat
+        </h2>
+    </div>
+
+    <div class="overflow-x-auto">
+        {% if daftar_pengajuan %}
+        <table class="min-w-full">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="py-4 px-6 text-left text-sm font-semibold text-gray-700">Tanggal</th>
+                    <th class="py-4 px-6 text-left text-sm font-semibold text-gray-700">Kategori Surat</th>
+                    <th class="py-4 px-6 text-left text-sm font-semibold text-gray-700">Surat</th>
+                    <th class="py-4 px-6 text-left text-sm font-semibold text-gray-700">Keperluan</th>
+                    <th class="py-4 px-6 text-left text-sm font-semibold text-gray-700">Status</th>
+                    <th class="py-4 px-6 text-left text-sm font-semibold text-gray-700">Aksi</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for surat in daftar_pengajuan %}
+                <tr class="
+                    {% if surat.status == 'Proses' %}
+                        bg-yellow-50
+                    {% elif surat.status == 'Selesai' %}
+                        bg-green-50
+                    {% elif surat.status == 'Ditolak' %}
+                        bg-red-50
+                    {% else %}
+                        bg-white
+                    {% endif %}
+                    hover:bg-gray-100 transition-colors
+                ">
+                    <td class="py-4 px-6 text-sm text-gray-600">
+                        <div class="flex items-center">
+                            <span class="mr-2">📅</span>
+                            {{ surat.created_at.strftime('%d-%m-%Y') if surat.created_at else '-' }}
+                        </div>
+                    </td>
+                    <td class="py-4 px-6 text-sm font-medium text-gray-800">{{ surat.nama_kategori or '-' }}</td>
+                    <td class="py-4 px-6 text-sm text-gray-600">{{ surat.nama_jenis or '-' }}</td>
+                    <td class="py-4 px-6 text-sm text-gray-600 max-w-xs truncate">{{ surat.keperluan or '-' }}</td>
+                    <td class="py-4 px-6">
+                        <span class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full
+                            {% if surat.status == 'Proses' %}
+                                bg-yellow-100 text-yellow-800 border border-yellow-200
+                            {% elif surat.status == 'Selesai' %}
+                                bg-green-100 text-green-800 border border-green-200
+                            {% elif surat.status == 'Ditolak' %}
+                                bg-red-100 text-red-800 border border-red-200
+                            {% else %}
+                                bg-gray-100 text-gray-600 border border-gray-200
+                            {% endif %}
+                        ">
+                            {% if surat.status == 'Proses' %}
+                                <span class="mr-1">⏳</span>
+                            {% elif surat.status == 'Selesai' %}
+                                <span class="mr-1">✅</span>
+                            {% elif surat.status == 'Ditolak' %}
+                                <span class="mr-1">❌</span>
+                            {% else %}
+                                <span class="mr-1">⏱️</span>
+                            {% endif %}
+                            {{ surat.status or 'Belum Diperiksa' }}
+                        </span>
+                    </td>
+                    <td class="py-4 px-6 text-sm text-gray-600">
+                        {% if surat.created_at and (now - surat.created_at).total_seconds() <= 1800 %}
+                            <a href="{{ url_for('pengajuan_surat', pengajuan_id=surat.pengajuan_id) }}" class="text-blue-600 hover:underline">✏️ Edit</a>
+                        {% else %}
+                            <span class="text-gray-400 text-sm italic">Tidak bisa diedit</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="p-12 text-center">
+            <div class="text-6xl mb-4">📭</div>
+            <h4 class="text-lg font-medium text-gray-600 mb-2">Belum Ada Pengajuan</h4>
+            <p class="text-gray-500">Pengajuan surat Anda akan ditampilkan di sini</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Form Pengajuan Surat -->
+<div id="form-section" class="bg-white rounded-2xl shadow-lg border border-gray-100">
+    <div class="p-6 border-b border-gray-100">
+        <h2 class="text-xl font-bold text-gray-800 flex items-center">
+            <span class="text-2xl mr-2">✏️</span>
+            {% if pengajuan_edit %}Edit Pengajuan Surat{% else %}Ajukan Surat Baru{% endif %}
+        </h2>
+        <p class="text-gray-600 mt-1">{% if pengajuan_edit %}Edit data pengajuan surat Anda{% else %}Lengkapi form di bawah untuk mengajukan surat{% endif %}</p>
+    </div>
+    
+    <div class="p-6">
+        <form method="POST" action="{{ url_for('pengajuan_surat') }}" class="space-y-6">
+            <!-- Hidden field untuk edit -->
+            {% if pengajuan_edit %}
+                <input type="hidden" name="pengajuan_id" value="{{ pengajuan_edit.pengajuan_id }}">
+            {% endif %}
+
+            <!-- Section: Jenis Surat -->
+            <div class="bg-blue-50 rounded-xl p-6 border border-blue-200">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <span class="mr-2">📄</span>
+                    Jenis Surat
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Kategori Surat</label>
+                        <select name="kategori_id" required 
+                                class="w-full px-4 py-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white">
+                            <option value="">-- Pilih Kategori --</option>
+                            {% for kategori in kategori_surat %}
+                                <option value="{{ kategori.kategori_id }}" 
+                                    {% if pengajuan_edit and pengajuan_edit.kategori_id == kategori.kategori_id %}selected{% endif %}>
+                                    {{ kategori.nama_kategori }}
+                                </option>
+
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Jenis Surat</label>
+                        <select name="jenis_surat_id" required 
+                                class="w-full px-4 py-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white">
+                            <option value="">-- Pilih Jenis --</option>
+                            {% for jenis in jenis_surat %}
+                                <option value="{{ jenis.jenis_surat_id }}"
+                                    {% if pengajuan_edit and pengajuan_edit.jenis_surat_id == jenis.jenis_surat_id %}selected{% endif %}>
+                                    {{ jenis.nama_jenis }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section: Data Pribadi -->
+            <div class="bg-green-50 rounded-xl p-6 border border-green-200">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <span class="mr-2">👤</span>
+                    Data Pribadi
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Nama Lengkap</label>
+                        <input name="nama_pemohon" required type="text" 
+                               value="{{ pengajuan_edit.nama_pemohon if pengajuan_edit else '' }}"
+                               class="w-full px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white"
+                               placeholder="Masukkan nama lengkap">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">NIK</label>
+                        <input name="nik_pemohon" required type="text" 
+                               value="{{ pengajuan_edit.nik_pemohon if pengajuan_edit else '' }}"
+                               class="w-full px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white"
+                               placeholder="Masukkan NIK">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Tempat Lahir</label>
+                        <input name="tempat_lahir" required type="text" 
+                               value="{{ pengajuan_edit.tempat_lahir if pengajuan_edit else '' }}"
+                               class="w-full px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white"
+                               placeholder="Masukkan tempat lahir">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Tanggal Lahir</label>
+                        <input name="tanggal_lahir" required type="date" 
+                               value="{{ pengajuan_edit.tanggal_lahir.strftime('%Y-%m-%d') if pengajuan_edit and pengajuan_edit.tanggal_lahir else '' }}"
+                               class="w-full px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Jenis Kelamin</label>
+                        <select name="jenis_kelamin" required 
+                                class="w-full px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white">
+                            <option value="">-- Pilih --</option>
+                            <option value="Laki-laki" {% if pengajuan_edit and pengajuan_edit.jenis_kelamin == 'Laki-laki' %}selected{% endif %}>Laki-laki</option>
+                            <option value="Perempuan" {% if pengajuan_edit and pengajuan_edit.jenis_kelamin == 'Perempuan' %}selected{% endif %}>Perempuan</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Agama</label>
+                        <select name="agama" required 
+                                class="w-full px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white">
+                            <option value="">-- Pilih Agama --</option>
+                            <option value="Islam" {% if pengajuan_edit and pengajuan_edit.agama == 'Islam' %}selected{% endif %}>Islam</option>
+                            <option value="Kristen" {% if pengajuan_edit and pengajuan_edit.agama == 'Kristen' %}selected{% endif %}>Kristen</option>
+                            <option value="Katolik" {% if pengajuan_edit and pengajuan_edit.agama == 'Katolik' %}selected{% endif %}>Katolik</option>
+                            <option value="Hindu" {% if pengajuan_edit and pengajuan_edit.agama == 'Hindu' %}selected{% endif %}>Hindu</option>
+                            <option value="Buddha" {% if pengajuan_edit and pengajuan_edit.agama == 'Buddha' %}selected{% endif %}>Buddha</option>
+                            <option value="Konghucu" {% if pengajuan_edit and pengajuan_edit.agama == 'Konghucu' %}selected{% endif %}>Konghucu</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Alamat Lengkap</label>
+                    <textarea name="alamat_lengkap" required rows="3"
+                              class="w-full px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white"
+                              placeholder="Masukkan alamat lengkap">{{ pengajuan_edit.alamat_lengkap if pengajuan_edit else '' }}</textarea>
+                </div>
+            </div>
+
+            <!-- Section: Data Lainnya -->
+            <div class="bg-yellow-50 rounded-xl p-6 border border-yellow-200">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <span class="mr-2">📋</span>
+                    Data Lainnya
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Status Perkawinan</label>
+                        <select name="status_perkawinan" required 
+                                class="w-full px-4 py-3 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all bg-white">
+                            <option value="">-- Pilih Status --</option>
+                            <option value="Belum Kawin" {% if pengajuan_edit and pengajuan_edit.status_perkawinan == 'Belum Kawin' %}selected{% endif %}>Belum Kawin</option>
+                            <option value="Kawin" {% if pengajuan_edit and pengajuan_edit.status_perkawinan == 'Kawin' %}selected{% endif %}>Kawin</option>
+                            <option value="Cerai Hidup" {% if pengajuan_edit and pengajuan_edit.status_perkawinan == 'Cerai Hidup' %}selected{% endif %}>Cerai Hidup</option>
+                            <option value="Cerai Mati" {% if pengajuan_edit and pengajuan_edit.status_perkawinan == 'Cerai Mati' %}selected{% endif %}>Cerai Mati</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Kewarganegaraan</label>
+                        <select name="kewarganegaraan" required 
+                                class="w-full px-4 py-3 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all bg-white">
+                            <option value="">-- Pilih --</option>
+                            <option value="WNI" {% if pengajuan_edit and pengajuan_edit.kewarganegaraan == 'WNI' %}selected{% endif %}>WNI (Warga Negara Indonesia)</option>
+                            <option value="WNA" {% if pengajuan_edit and pengajuan_edit.kewarganegaraan == 'WNA' %}selected{% endif %}>WNA (Warga Negara Asing)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">No. Kartu Keluarga</label>
+                        <input name="no_kk" required type="text" 
+                               value="{{ pengajuan_edit.no_kk if pengajuan_edit else '' }}"
+                               class="w-full px-4 py-3 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all bg-white"
+                               placeholder="Masukkan No. KK">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Pekerjaan</label>
+                        <input name="pekerjaan" required type="text" 
+                               value="{{ pengajuan_edit.pekerjaan if pengajuan_edit else '' }}"
+                               class="w-full px-4 py-3 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all bg-white"
+                               placeholder="Masukkan pekerjaan">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Instansi/Perusahaan</label>
+                        <input name="instansi" required type="text" 
+                               value="{{ pengajuan_edit.instansi if pengajuan_edit else '' }}"
+                               class="w-full px-4 py-3 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all bg-white"
+                               placeholder="Masukkan nama instansi/perusahaan">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section: Keperluan -->
+            <div class="bg-purple-50 rounded-xl p-6 border border-purple-200">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <span class="mr-2">📝</span>
+                    Keperluan Surat
+                </h3>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Jelaskan keperluan surat ini</label>
+                    <textarea name="keperluan" required rows="4"
+                              class="w-full px-4 py-3 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all bg-white"
+                              placeholder="Contoh: Untuk keperluan kerja, pengajuan beasiswa, dsb.">{{ pengajuan_edit.keperluan if pengajuan_edit else '' }}</textarea>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="flex justify-end space-x-4">
+                {% if pengajuan_edit %}
+                    <a href="{{ url_for('pengajuan_surat') }}" 
+                       class="bg-gray-500 hover:bg-gray-600 text-white font-semibold px-6 py-3 rounded-lg transition-all">
+                        Batal
+                    </a>
+                    <button type="submit" 
+                            class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-3 rounded-lg transition-all">
+                        Update Pengajuan
+                    </button>
+                {% else %}
+                    <button type="submit" 
+                            class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-3 rounded-lg transition-all">
+                        Kirim Pengajuan
+                    </button>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function scrollToForm() {
+    document.getElementById('form-section').scrollIntoView({ 
+        behavior: 'smooth' 
+    });
+}
+</script>
+
+{% endblock %}

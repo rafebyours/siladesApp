@@ -1,0 +1,275 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- Header Section -->
+<div class="mb-8">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold bg-gradient-to-r from-primary-blue to-primary-green bg-clip-text text-black">
+                Formulir Feedback
+            </h1>
+            <p class="text-gray-600 mt-1">Bantu kami meningkatkan layanan dengan mengisi formulir berikut</p>
+        </div>
+    </div>
+</div>
+
+<!-- Notification Area -->
+<div id="notification" class="hidden mb-6"></div>
+
+<!-- Pesan flash -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="mb-6 p-4 rounded-lg flex items-center {{ 
+          'bg-green-100 text-green-800 border border-green-200' if category == 'success' else 
+          'bg-yellow-100 text-yellow-800 border border-yellow-200' }}">
+        <span class="mr-2">{{ '✅' if category == 'success' else '⚠️' }}</span>
+        <span class="font-medium">{{ message }}</span>
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+
+<!-- Form Feedback -->
+<div class="flex justify-center px-4">
+  <div class="w-full max-w-3xl">
+<div id="form-section" class="bg-white rounded-2xl shadow-lg border border-gray-100">
+    <div class="p-6 border-b border-gray-100">
+        <h2 class="text-xl font-bold text-gray-800 flex items-center">
+            <span class="text-2xl mr-2">📝</span>
+            Berikan Feedback Anda
+        </h2>
+        <p class="text-gray-600 mt-1">Masukan Anda sangat berharga untuk meningkatkan kualitas layanan kami</p>
+    </div>
+    
+    <div class="p-6">
+        <form method="POST" enctype="multipart/form-data" onsubmit="handleFormSubmit(event)" class="space-y-6">
+            
+            <!-- Section: Informasi Kontak -->
+            <div class="bg-blue-50 rounded-xl p-6 border border-blue-200">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <span class="mr-2">📧</span>
+                    Informasi Kontak
+                </h3>
+                <div>
+                    <label for="email" class="block text-sm font-semibold text-gray-700 mb-2">Email</label>
+                    <input type="email" name="email" id="email" required 
+                           class="w-full px-4 py-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white"
+                           placeholder="Masukkan alamat email Anda" />
+                </div>
+            </div>
+
+            <!-- Section: Kategori Feedback -->
+            <div class="bg-green-50 rounded-xl p-6 border border-green-200">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <span class="mr-2">🏷️</span>
+                    Kategori Feedback
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="kategori" class="block text-sm font-semibold text-gray-700 mb-2">Kategori Feedback</label>
+                        <select name="kategori" id="kategori" required 
+                                class="w-full px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white" 
+                                onchange="updateSubKategoriVisibility()">
+                            <option value="">-- Pilih Kategori --</option>
+                            <option value="Proses Pembuatan Surat">Proses Pembuatan Surat</option>
+                            <option value="Tanggapan terhadap Pengaduan">Tanggapan terhadap Pengaduan</option>
+                            <option value="Sikap Petugas / Admin Desa">Sikap Petugas / Admin Desa</option>
+                            <option value="Kecepatan dan Efisiensi Pelayanan">Kecepatan dan Efisiensi Pelayanan</option>
+                            <option value="Kemudahan Menggunakan Aplikasi">Kemudahan Menggunakan Aplikasi</option>
+                            <option value="Kebersihan dan Kenyamanan Kantor Desa">Kebersihan dan Kenyamanan Kantor Desa</option>
+                            <option value="Ketersediaan Informasi">Ketersediaan Informasi</option>
+                        </select>
+                    </div>
+                    <div id="subKategoriContainer" style="display: none;">
+                        <label for="sub_kategori" class="block text-sm font-semibold text-gray-700 mb-2">Sub-Kategori Surat</label>
+                        <select name="sub_kategori" id="sub_kategori" 
+                                class="w-full px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white">
+                            <option value="">-- Pilih Sub-Kategori Surat --</option>
+                            <option value="Surat Kependudukan">Surat Kependudukan</option>
+                            <option value="Surat Administrasi & Sosial">Surat Administrasi & Sosial</option>
+                            <option value="Surat Pendidikan & Pekerjaan">Surat Pendidikan & Pekerjaan</option>
+                            <option value="Surat Keamanan & Hukum">Surat Keamanan & Hukum</option>
+                            <option value="Surat Pernikahan">Surat Pernikahan</option>
+                            <option value="Surat Lain-lain / Umum">Surat Lain-lain / Umum</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section: Komentar -->
+            <div class="bg-yellow-50 rounded-xl p-6 border border-yellow-200">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <span class="mr-2">💭</span>
+                    Komentar dan Saran
+                </h3>
+                <div>
+                    <label for="komentar" class="block text-sm font-semibold text-gray-700 mb-2">Komentar</label>
+                    <textarea name="komentar" id="komentar" rows="4" required 
+                              class="w-full px-4 py-3 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all bg-white" 
+                              placeholder="Tulis komentar, saran, atau masukan Anda di sini..."></textarea>
+                </div>
+            </div>
+
+            <!-- Section: Penilaian -->
+            <div class="bg-purple-50 rounded-xl p-6 border border-purple-200">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <span class="mr-2">⭐</span>
+                    Penilaian Layanan
+                </h3>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-3">Berikan penilaian Anda</label>
+                    <div class="flex justify-start items-center space-x-3 mb-3">
+                        {% for i in range(1,6) %}
+                        <input
+                            type="radio"
+                            name="penilaian"
+                            value="{{ i }}"
+                            id="star{{ i }}"
+                            class="hidden"
+                            data-rating="{{ i }}"
+                            {% if i == 1 %} required {% endif %}
+                        >
+                        <label
+                            for="star{{ i }}"
+                            class="cursor-pointer text-4xl text-gray-300 hover:text-yellow-400 transition-colors duration-200"
+                        >★</label>
+                        {% endfor %}
+                    </div>
+                    <div id="ratingText" class="text-sm text-gray-600 font-medium"></div>
+                </div>
+            </div>
+
+            <!-- Section: Lampiran -->
+            <div class="bg-indigo-50 rounded-xl p-6 border border-indigo-200">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <span class="mr-2">📎</span>
+                    Lampiran (Opsional)
+                </h3>
+                <div>
+                    <label for="lampiran" class="block text-sm font-semibold text-gray-700 mb-2">Upload File Pendukung</label>
+                    <input
+                        type="file"
+                        id="lampiran"
+                        name="lampiran"
+                        accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
+                        class="w-full px-4 py-3 border border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all bg-white"
+                    >
+                    <p class="text-xs text-gray-500 mt-2">Format yang didukung: JPG, PNG, PDF, DOC, DOCX (Max. 5MB)</p>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="flex justify-end pt-6">
+                <button type="submit" class="px-8 py-3 bg-gradient-to-r from-blue-500 to-green-500 text-white font-semibold rounded-lg hover:shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center">
+                    <span class="mr-2">🚀</span>
+                    Kirim Feedback
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+ </div>
+</div>
+
+<script>
+// Function to scroll to form
+function scrollToForm() {
+    document.getElementById('form-section').scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+    });
+}
+
+// Function to show notification
+function showNotification(message, type) {
+    const notification = document.getElementById('notification');
+    notification.className = `mb-6 p-4 rounded-lg flex items-center ${
+        type === 'success' ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-red-100 text-red-800 border border-red-200'
+    }`;
+    
+    notification.innerHTML = `
+        <span class="mr-2">${type === 'success' ? '✅' : '❌'}</span>
+        <span class="font-medium">${message}</span>
+    `;
+    
+    notification.classList.remove('hidden');
+    
+    // Auto hide after 5 seconds
+    setTimeout(() => {
+        notification.classList.add('hidden');
+    }, 5000);
+}
+
+// Tampilkan container sub_kategori jika kategori Proses Pembuatan Surat
+function updateSubKategoriVisibility() {
+    const kategoriSelect = document.getElementById('kategori');
+    const subKategoriContainer = document.getElementById('subKategoriContainer');
+
+    if (kategoriSelect.value === 'Proses Pembuatan Surat') {
+        subKategoriContainer.style.display = 'block';
+        document.getElementById('sub_kategori').setAttribute('required', 'required');
+    } else {
+        subKategoriContainer.style.display = 'none';
+        document.getElementById('sub_kategori').removeAttribute('required');
+        document.getElementById('sub_kategori').value = '';
+    }
+}
+
+// Initialize visibility on page load
+document.addEventListener('DOMContentLoaded', function() {
+    updateSubKategoriVisibility();
+});
+
+// Rating bintang interaktif
+const stars = document.querySelectorAll('input[name="penilaian"]');
+const ratingText = document.getElementById('ratingText');
+const ratingDescriptions = {
+    1: 'Sangat Buruk',
+    2: 'Buruk',
+    3: 'Cukup',
+    4: 'Baik',
+    5: 'Sangat Baik'
+};
+
+stars.forEach(star => {
+    star.addEventListener('change', () => {
+        const val = star.value;
+        ratingText.textContent = ratingDescriptions[val] || '';
+        // highlight stars up to selected
+        stars.forEach(s => {
+            const label = document.querySelector(`label[for="${s.id}"]`);
+            if (s.value <= val) {
+                label.classList.add('text-yellow-400');
+                label.classList.remove('text-gray-300');
+            } else {
+                label.classList.remove('text-yellow-400');
+                label.classList.add('text-gray-300');
+            }
+        });
+    });
+});
+</script>
+
+<style>
+    .card-hover {
+        transition: all 0.3s ease;
+    }
+    .card-hover:hover {
+        transform: translateY(-2px);
+    }
+    
+    /* Custom focus styles for form inputs */
+    input:focus, select:focus, textarea:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    /* Smooth scrolling */
+    html {
+        scroll-behavior: smooth;
+    }
+</style>
+
+{% endblock %}

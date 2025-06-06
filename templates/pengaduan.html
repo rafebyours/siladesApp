@@ -1,0 +1,294 @@
+{% extends "base.html" %}
+
+{% block title %}Pengaduan Masyarakat - DesaKu{% endblock %}
+
+{% block content %}
+<!-- Header Section -->
+<div class="mb-8">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold bg-gradient-to-r from-primary-blue to-primary-green bg-clip-text text-black">
+                Pengaduan Masyarakat
+            </h1>
+            <p class="text-gray-600 mt-1">Sampaikan keluhan dan saran Anda untuk kemajuan desa</p>
+        </div>
+    </div>
+</div>
+
+<!-- Notification Area -->
+<div id="notification" class="hidden mb-6"></div>
+
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="mb-6 p-4 rounded-lg flex items-center {{ 
+          'bg-green-100 text-green-800 border border-green-200' if category == 'success' else 
+          'bg-yellow-100 text-yellow-800 border border-yellow-200' }}">
+        <span class="mr-2">{{ '✅' if category == 'success' else '⚠️' }}</span>
+        <span class="font-medium">{{ message }}</span>
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+<div class="w-full max-w-6xl mx-auto">
+  <!-- Form Section -->
+  <div class="px-4 mb-8">
+    <div id="form-section" class="bg-white rounded-2xl shadow-lg border border-gray-100">
+      <div class="p-6 border-b border-gray-100">
+        <h2 class="text-xl font-bold text-gray-800 flex items-center">
+          <span class="text-2xl mr-2">📝</span>
+          Form Pengaduan Baru
+        </h2>
+        <p class="text-gray-600 mt-1">Lengkapi formulir berikut untuk menyampaikan pengaduan Anda</p>
+      </div>
+
+      <div class="p-6">
+        <form method="POST" enctype="multipart/form-data" onsubmit="handleFormSubmit(event)" class="space-y-6">
+          <!-- Data Pengadu Section -->
+          <div class="bg-blue-50 rounded-xl p-6 border border-blue-200">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+              <span class="mr-2">👤</span>
+              Data Pengadu
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label for="nama_pengadu" class="block text-sm font-semibold text-gray-700 mb-2">Nama Pengadu <span class="text-red-500">*</span></label>
+                <input type="text" id="nama_pengadu" name="nama_pengadu" required class="w-full px-4 py-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white" />
+              </div>
+              <div>
+                <label for="email_pengadu" class="block text-sm font-semibold text-gray-700 mb-2">Email Pengadu <span class="text-red-500">*</span></label>
+                <input type="email" id="email_pengadu" name="email_pengadu" required class="w-full px-4 py-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Kategori Pengaduan Section -->
+          <div class="bg-green-50 rounded-xl p-6 border border-green-200">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+              <span class="mr-2">🏷️</span>
+              Kategori Pengaduan
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label for="kategori" class="block text-sm font-semibold text-gray-700 mb-2">Kategori <span class="text-red-500">*</span></label>
+                <select id="kategori" name="kategori" required onchange="updateSubkategori()" class="w-full px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white">
+                  <option value="" disabled selected>Pilih Kategori</option>
+                  <option value="Infrastruktur Desa">Infrastruktur Desa</option>
+                  <option value="Pelayanan Administrasi">Pelayanan Administrasi</option>
+                  <option value="Pengelolaan Lingkungan">Pengelolaan Lingkungan</option>
+                  <option value="Sosial dan Kemasyarakatan">Sosial dan Kemasyarakatan</option>
+                  <option value="Pertanian dan Perkebunan">Pertanian dan Perkebunan</option>
+                  <option value="Keamanan dan Ketertiban">Keamanan dan Ketertiban</option>
+                  <option value="Pendidikan dan Kesehatan">Pendidikan dan Kesehatan</option>
+                  <option value="Lain-lain">Lain-lain</option>
+                </select>
+              </div>
+              <div>
+                <label for="sub_kategori" class="block text-sm font-semibold text-gray-700 mb-2">Sub Kategori <span class="text-red-500">*</span></label>
+                <select id="sub_kategori" name="sub_kategori" required class="w-full px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white">
+                  <option value="" disabled selected>Pilih Sub Kategori</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Detail Pengaduan Section -->
+          <div class="bg-yellow-50 rounded-xl p-6 border border-yellow-200">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+              <span class="mr-2">📄</span>
+              Detail Pengaduan
+            </h3>
+            <div class="space-y-4">
+              <div>
+                <label for="judul_pengaduan" class="block text-sm font-semibold text-gray-700 mb-2">Judul Pengaduan <span class="text-red-500">*</span></label>
+                <input type="text" id="judul_pengaduan" name="judul_pengaduan" required class="w-full px-4 py-3 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all bg-white" placeholder="Masukkan judul pengaduan yang jelas dan singkat" />
+              </div>
+              <div>
+                <label for="deskripsi" class="block text-sm font-semibold text-gray-700 mb-2">Deskripsi Pengaduan <span class="text-red-500">*</span></label>
+                <textarea id="deskripsi" name="deskripsi" rows="4" required class="w-full px-4 py-3 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all bg-white" placeholder="Jelaskan detail pengaduan Anda..."></textarea>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label for="tanggal_kejadian" class="block text-sm font-semibold text-gray-700 mb-2">Tanggal Kejadian <span class="text-red-500">*</span></label>
+                  <input type="date" id="tanggal_kejadian" name="tanggal_kejadian" required class="w-full px-4 py-3 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all bg-white" />
+                </div>
+                <div>
+                  <label for="alamat" class="block text-sm font-semibold text-gray-700 mb-2">Alamat Kejadian <span class="text-red-500">*</span></label>
+                  <input type="text" id="alamat" name="alamat" required class="w-full px-4 py-3 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all bg-white" placeholder="Masukkan alamat lokasi kejadian" />
+                </div>
+              </div>
+              <div>
+                <label for="lampiran" class="block text-sm font-semibold text-gray-700 mb-2">Lampiran (Foto/Video/File)</label>
+                <input type="file" id="lampiran" name="lampiran" class="w-full px-4 py-3 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all bg-white" accept=".jpg,.jpeg,.png,.pdf,.mp4" />
+                <p class="text-xs text-gray-500 mt-2">Format: JPG, PNG, PDF, MP4 (Max: 10MB)</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Submit Buttons -->
+          <div class="flex items-center justify-end space-x-4 pt-6">
+            <button type="reset" class="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium">
+              <span class="mr-2">🔄</span>
+              Reset
+            </button>
+            <button type="submit" class="px-8 py-3 bg-gradient-to-r from-blue-500 to-green-500 text-white font-semibold rounded-lg hover:shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center">
+              <span class="mr-2">📤</span>
+              Kirim Pengaduan
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Riwayat Pengaduan Section -->
+  <div class="mt-8 bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+    <div class="p-6 border-b border-gray-100">
+      <h2 class="text-xl font-bold text-gray-800 flex items-center">
+        <span class="text-2xl mr-2">📊</span>
+        Riwayat Pengaduan Saya
+      </h2>
+      <p class="text-gray-600 mt-1">Pantau status pengaduan yang telah Anda ajukan</p>
+    </div>
+
+    <div class="overflow-x-auto">
+       <table class="w-full">
+            <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+                <tr>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">#</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">Judul</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">Kategori</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">Tanggal</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">Status</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">Keterangan</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                {% for p in daftar_pengaduan %}
+                <tr class="transition-all duration-200 card-hover
+                    {% if p.status == 'terkirim' %}bg-blue-50
+                    {% elif p.status == 'pending' %}bg-purple-50
+                    {% elif p.status == 'diproses' %}bg-yellow-50
+                    {% elif p.status == 'selesai' %}bg-green-50
+                    {% else %}bg-white
+                    {% endif %}
+                    hover:bg-gradient-to-r hover:from-blue-100 hover:to-blue-200">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        <div class="flex items-center justify-center w-8 h-8 bg-gradient-to-r from-blue-100 to-blue-200 rounded-full text-blue-600 font-semibold">
+                            {{ loop.index }}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="text-sm font-medium text-gray-900">{{ p.judul_pengaduan }}</div>
+                        <div class="text-sm text-gray-500 truncate max-w-xs" title="{{ p.deskripsi }}">
+                            {{ p.deskripsi[:60] }}{% if p.deskripsi|length > 60 %}...{% endif %}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="text-sm text-gray-900 font-medium">{{ p.kategori }}</div>
+                        <div class="text-xs text-gray-500">{{ p.sub_kategori }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900 font-medium">
+                            {{ p.tanggal_kejadian.strftime('%d-%m-%Y') if p.tanggal_kejadian else '-' }}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% set status_config = {
+                            'terkirim': {'color': 'blue', 'emoji': '📨'},
+                            'pending': {'color': 'bg-purple-100', 'emoji': '⏳'},
+                            'diproses': {'color': 'yellow', 'emoji': '🔄'},
+                            'selesai': {'color': 'green', 'emoji': '✅'}
+                        } %}
+                        {% set config = status_config.get(p.status, {'color': 'gray', 'emoji': '⚪'}) %}
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
+                            bg-{{ config.color }}-100 text-{{ config.color }}-800">
+                            <span class="mr-1">{{ config.emoji }}</span>
+                            {{ p.status.title() }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-800 whitespace-normal">
+                        {{ p.keterangan or '-' }}
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if not daftar_pengaduan %}
+                <tr>
+                    <td colspan="6" class="px-6 py-12 text-center">
+                        <div class="flex flex-col items-center justify-center">
+                            <div class="text-6xl mb-4">📭</div>
+                            <div class="text-gray-500 text-lg font-medium mb-2">Belum ada pengaduan</div>
+                            <div class="text-gray-400 text-sm">Pengaduan yang Anda buat akan ditampilkan di sini</div>
+                        </div>
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+  </div>
+</div>
+
+
+<script>
+const subKategoriMap = {
+    "Infrastruktur Desa": ["Jalan Rusak", "Jembatan Rusak", "Saluran Air / Drainase Tersumbat", "Penerangan Jalan Umum Mati", "Fasilitas Umum Rusak (Posyandu, Balai Desa)"],
+    "Pelayanan Administrasi": ["Keterlambatan Pengurusan Surat", "Kesalahan Data Administrasi", "Informasi Pelayanan Tidak Jelas", "Penolakan Pengajuan Surat Tanpa Alasan"],
+    "Pengelolaan Lingkungan": ["Sampah Menumpuk", "Pencemaran Lingkungan", "Pengelolaan Air Bersih", "Perizinan Limbah Rumah Tangga"],
+    "Sosial dan Kemasyarakatan": ["Bantuan Sosial Tidak Tepat Sasaran", "Konflik Antar Warga", "Pengaduan Kekerasan atau KDRT", "Penyalahgunaan Dana Desa"],
+    "Pertanian dan Perkebunan": ["Bantuan Pertanian Tidak Tepat", "Kerusakan Irigasi", "Hama Penyakit Tanaman", "Kelangkaan Bibit atau Pupuk"],
+    "Keamanan dan Ketertiban": ["Gangguan Keamanan (Maling, Tawuran)", "Ketertiban Umum", "Penegakan Peraturan Desa", "Laporan Tindak Kriminal"],
+    "Pendidikan dan Kesehatan": ["Fasilitas Pendidikan Tidak Memadai", "Bantuan Kesehatan Tidak Terlayani", "Pelayanan Posyandu Kurang Optimal", "Kurangnya Informasi Program Kesehatan"],
+    "Lain-lain": ["Keluhan Umum yang Tidak Termasuk Kategori di Atas"]
+};
+
+function updateSubkategori() {
+    const kategoriSelect = document.getElementById('kategori');
+    const subkategoriSelect = document.getElementById('sub_kategori');
+    const selectedKategori = kategoriSelect.value;
+
+    subkategoriSelect.innerHTML = '<option value="" disabled selected>Pilih Sub Kategori</option>';
+
+    if (subKategoriMap[selectedKategori]) {
+        subKategoriMap[selectedKategori].forEach(sub => {
+            const option = document.createElement('option');
+            option.value = sub;
+            option.textContent = sub;
+            subkategoriSelect.appendChild(option);
+        });
+    }
+}
+
+function scrollToForm() {
+    document.getElementById('form-section').scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+    });
+}
+</script>
+
+<style>
+.card-hover {
+    transition: all 0.3s ease;
+}
+.card-hover:hover {
+    transform: translateY(-1px);
+}
+
+input:focus, select:focus, textarea:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+</style>
+{% endblock %}

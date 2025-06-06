@@ -1,0 +1,688 @@
+{% extends 'admin_base.html' %}
+{% block content %}
+
+<!-- Notifikasi -->
+<div id="notification" class="mb-6">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="mb-4 p-4 rounded-lg flex items-center
+            {% if category == 'success' %} bg-green-100 text-green-800 border border-green-200
+            {% elif category == 'error' %} bg-red-100 text-red-800 border border-red-200
+            {% else %} bg-yellow-100 text-yellow-800 border border-yellow-200 {% endif %}">
+          <span class="mr-2">
+            {% if category == 'success' %} ✅
+            {% elif category == 'error' %} ❌
+            {% else %} ⚠️ {% endif %}
+          </span>
+          <span class="font-medium">{{ message }}</span>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+</div>
+
+<!-- Auto dismiss JS -->
+<script>
+  setTimeout(() => {
+    const notif = document.getElementById('notification');
+    if (notif) notif.style.display = 'none';
+  }, 5000);
+</script>
+
+<!-- Kontainer Utama dengan lebar seragam -->
+<div class="w-full max-w-7xl mx-auto">
+  <!-- Header -->
+  <div class="mb-8">
+      <div class="flex items-center justify-between">
+          <div>
+              <h1 class="text-3xl font-bold bg-gradient-to-r from-primary-blue to-primary-green bg-clip-text text-transparent">
+                  Data Pengaduan
+              </h1>
+              <p class="text-gray-600 mt-1">Kelola data pengaduan masyarakat</p>
+          </div>
+      </div>
+  </div>
+  
+<!-- Tabel Data -->
+<div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+   <div class="p-6 border-b border-gray-100">
+        <h2 class="text-xl font-bold text-gray-800 flex items-center">
+            <span class="text-2xl mr-2">📊</span>
+            Data Pengaduan Masyarakat
+        </h2>
+        <p class="text-gray-600 mt-1">Daftar semua pengaduan yang masuk</p>
+    </div>
+    
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+                <tr>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">ID</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">Nama Pengadu</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">Kategori</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">Judul</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">Tanggal</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">Aksi</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                {% for p in pengaduan %}
+                <tr class="
+    transition-all duration-200 card-hover
+    {% if p.status == 'pending' %}bg-yellow-50
+    {% elif p.status == 'diproses' %}bg-blue-50
+    {% elif p.status == 'selesai' %}bg-green-50
+    {% elif p.status == 'terkirim' %}bg-purple-50
+    {% else %}bg-white
+    {% endif %}
+    hover:bg-gradient-to-r hover:from-blue-100 hover:to-blue-200
+">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        <div class="flex items-center justify-center w-8 h-8 bg-gradient-to-r from-blue-100 to-blue-200 rounded-full text-blue-600 font-semibold">
+                            {{ loop.index }}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm font-medium text-gray-900">{{ p.nama_pengadu }}</div>
+                        <div class="text-sm text-gray-500">{{ p.email_pengadu }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm font-medium text-gray-900">{{ p.kategori }}</div>
+                        <div class="text-sm text-gray-500">{{ p.sub_kategori }}</div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="text-sm text-gray-900 font-medium max-w-xs truncate" title="{{ p.judul_pengaduan }}">
+                            {{ p.judul_pengaduan }}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900 font-medium">
+                            {% if p.tanggal_kejadian %}
+                                {{ p.tanggal_kejadian.strftime('%d-%m-%Y') if p.tanggal_kejadian.strftime else p.tanggal_kejadian }}
+                            {% else %}
+                                <span class="text-gray-400">-</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex space-x-2">
+                            <button onclick="showDetail('{{ p.pengaduan_id }}')" 
+                                    class="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full hover:bg-blue-200 transition-colors duration-200" 
+                                    title="Detail">
+                                👁️
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Detail - Dipindahkan keluar dari tabel -->
+{% for p in pengaduan %}
+<div id="detail-{{ p.pengaduan_id }}" style="display:none;" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl shadow-2xl border border-gray-100 max-w-6xl w-full max-h-[95vh] overflow-hidden flex flex-col">
+        <!-- Header Modal -->
+        <div class="p-6 border-b border-gray-100 flex-shrink-0">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800 flex items-center">
+                        <span class="text-2xl mr-2">📋</span>
+                        Detail Pengaduan #{{ p.pengaduan_id }}
+                    </h2>
+                    <p class="text-gray-600 mt-1">Informasi lengkap pengaduan</p>
+                </div>
+                <button onclick="showDetail('{{ p.pengaduan_id }}')" class="text-gray-400 hover:text-gray-600 text-2xl font-bold transition-colors">
+                    ✕
+                </button>
+            </div>
+        </div>
+        
+        <!-- Content Modal - Scrollable -->
+        <div class="flex-1 overflow-y-auto p-6 space-y-6">
+            <!-- Informasi Pengadu -->
+            <div class="bg-purple-50 rounded-xl p-6 border border-purple-200">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <span class="mr-2">👤</span>
+                    Informasi Pengadu
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">User ID</label>
+                        <p class="text-gray-900">{{ p.user_id }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Nama</label>
+                        <p class="text-gray-900">{{ p.nama_pengadu }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Email</label>
+                        <p class="text-gray-900">{{ p.email_pengadu }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Kategori -->
+            <div class="bg-blue-50 rounded-xl p-6 border border-blue-200">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <span class="mr-2">📝</span>
+                    Kategori
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Kategori</label>
+                        <p class="text-gray-900">{{ p.kategori }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Sub Kategori</label>
+                        <p class="text-gray-900">{{ p.sub_kategori }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Detail Pengaduan -->
+            <div class="bg-green-50 rounded-xl p-6 border border-green-200">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <span class="mr-2">📋</span>
+                    Detail Pengaduan
+                </h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Judul</label>
+                        <p class="text-gray-900">{{ p.judul_pengaduan }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Deskripsi</label>
+                        <p class="text-gray-900 whitespace-pre-wrap">{{ p.deskripsi }}</p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Tanggal Kejadian</label>
+                            <p class="text-gray-900">{{ p.tanggal_kejadian }}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Alamat</label>
+                            <p class="text-gray-900">{{ p.alamat }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Status dan Lampiran -->
+            <div class="bg-yellow-50 rounded-xl p-6 border border-yellow-200">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <span class="mr-2">📎</span>
+                    Status dan Lampiran
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Lampiran</label>
+                        {% if p.lampiran %}
+                        <div class="flex space-x-2">
+                            <a href="{{ p.lampiran }}" target="_blank"
+                            class="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full hover:bg-blue-200 transition-colors duration-200">
+                                👁️ Lihat
+                            </a>
+                            <a href="{{ p.lampiran }}" download
+                            class="inline-flex items-center px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full hover:bg-green-200 transition-colors duration-200">
+                                📥 Download
+                            </a>
+                        </div>
+                        {% else %}
+                        <p class="text-gray-500">Tidak ada lampiran</p>
+                        {% endif %}
+
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Keterangan</label>
+                        <p class="text-gray-900">{{ p.keterangan or '-' }}</p>
+                    </div>
+                    <form id="form-update-{{ p.pengaduan_id }}" action="{{ url_for('edit_pengaduan', id=p.pengaduan_id) }}" method="POST" enctype="multipart/form-data">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label for="edit_status_{{ p.pengaduan_id }}" class="block text-sm font-semibold text-gray-700 mb-2">Status</label>
+                            <select name="status" id="edit_status_{{ p.pengaduan_id }}" required 
+                                   class="w-full px-4 py-3 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all bg-white">
+                                <option value="terkirim" {% if p.status == 'terkirim' %}selected{% endif %}>Terkirim</option>
+                                <option value="diproses" {% if p.status == 'diproses' %}selected{% endif %}>Diproses</option>
+                                <option value="selesai" {% if p.status == 'selesai' %}selected{% endif %}>Selesai</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="edit_keterangan_{{ p.pengaduan_id }}" class="block text-sm font-semibold text-gray-700 mb-2">Keterangan</label>
+                            <input type="text" name="keterangan" id="edit_keterangan_{{ p.pengaduan_id }}" value="{{ p.keterangan or '' }}" 
+                                   class="w-full px-4 py-3 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all bg-white" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer Modal -->
+<div class="p-6 border-t border-gray-100 flex-shrink-0">
+    <div class="flex justify-end space-x-3">
+        <!-- Tombol Update -->
+        <button 
+            onclick="document.getElementById('form-update-{{ p.pengaduan_id }}').submit()" 
+            class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all duration-200">
+            💾 Update
+        </button>
+
+
+        <!-- Tombol Tutup -->
+        <button 
+            onclick="showDetail('{{ p.pengaduan_id }}')" 
+            class="px-6 py-3 bg-gray-500 text-white font-semibold rounded-lg hover:bg-gray-600 transition-all duration-200">
+            ✖️ Tutup
+        </button>
+    </div>
+                        </form>
+</div>
+
+    </div>
+</div>
+{% endfor %}
+
+<!-- JavaScript Functions -->
+<script>
+// Toggle form visibility
+function toggleForm(formId) {
+    const form = document.getElementById(formId);
+    if (form.style.display === 'none' || form.style.display === '') {
+        form.style.display = 'block';
+        // Smooth scroll to form if it's being shown
+        if (!formId.includes('edit-') && !formId.includes('detail-')) {
+            form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    } else {
+        form.style.display = 'none';
+    }
+}
+
+// Show/Hide detail modal
+function showDetail(pengaduanId) {
+    const modal = document.getElementById('detail-' + pengaduanId);
+    if (modal.style.display === 'none' || modal.style.display === '') {
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden'; // Prevent background scroll
+    } else {
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto'; // Restore scroll
+    }
+}
+
+// Close modal when clicking outside
+document.addEventListener('click', function(event) {
+    // Close detail modals
+    const detailModals = document.querySelectorAll('[id^="detail-"]');
+    detailModals.forEach(modal => {
+        if (event.target === modal) {
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+    });
+    
+    // Close edit modals
+    const editModals = document.querySelectorAll('[id^="form-edit-"]');
+    editModals.forEach(modal => {
+        if (event.target === modal) {
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+    });
+});
+
+// Enhanced table interactions
+document.addEventListener('DOMContentLoaded', function() {
+    // Add hover effects to table rows
+    const tableRows = document.querySelectorAll('tbody tr');
+    tableRows.forEach(row => {
+        row.addEventListener('mouseenter', function() {
+            this.classList.add('transform', 'scale-[1.01]', 'shadow-md');
+        });
+        
+        row.addEventListener('mouseleave', function() {
+            this.classList.remove('transform', 'scale-[1.01]', 'shadow-md');
+        });
+    });
+    
+    // Auto-hide notifications after 5 seconds
+    const notifications = document.querySelectorAll('[id="notification"] > div');
+    notifications.forEach(notification => {
+        setTimeout(() => {
+            notification.style.opacity = '0';
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 300);
+        }, 5000);
+    });
+});
+
+// Form validation
+function validateForm(formElement) {
+    const requiredFields = formElement.querySelectorAll('[required]');
+    let isValid = true;
+    
+    requiredFields.forEach(field => {
+        if (!field.value.trim()) {
+            field.classList.add('border-red-500', 'bg-red-50');
+            isValid = false;
+        } else {
+            field.classList.remove('border-red-500', 'bg-red-50');
+        }
+    });
+    
+    return isValid;
+}
+
+// Email validation
+function validateEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
+
+// Enhanced form submission
+document.addEventListener('submit', function(event) {
+    const form = event.target;
+    
+    // Basic validation
+    if (!validateForm(form)) {
+        event.preventDefault();
+        alert('Mohon lengkapi semua field yang wajib diisi!');
+        return;
+    }
+    
+    // Email validation
+    const emailFields = form.querySelectorAll('input[type="email"]');
+    let emailValid = true;
+    
+    emailFields.forEach(emailField => {
+        if (emailField.value && !validateEmail(emailField.value)) {
+            emailField.classList.add('border-red-500', 'bg-red-50');
+            emailValid = false;
+        } else {
+            emailField.classList.remove('border-red-500', 'bg-red-50');
+        }
+    });
+    
+    if (!emailValid) {
+        event.preventDefault();
+        alert('Format email tidak valid!');
+        return;
+    }
+    
+    // Show loading state
+    const submitButton = form.querySelector('button[type="submit"]');
+    if (submitButton) {
+        const originalText = submitButton.innerHTML;
+        submitButton.innerHTML = '<span class="mr-2">⏳</span>Menyimpan...';
+        submitButton.disabled = true;
+        
+        // Restore button if form validation fails on server side
+        setTimeout(() => {
+            submitButton.innerHTML = originalText;
+            submitButton.disabled = false;
+        }, 10000);
+    }
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(event) {
+    // ESC to close modals
+    if (event.key === 'Escape') {
+        // Close all detail modals
+        document.querySelectorAll('[id^="detail-"]').forEach(modal => {
+            if (modal.style.display === 'flex') {
+                modal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+        });
+        
+        // Close all edit modals
+        document.querySelectorAll('[id^="form-edit-"]').forEach(modal => {
+            if (modal.style.display === 'block') {
+                modal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+        });
+        
+        // Close add form
+        const addForm = document.getElementById('form-tambah');
+        if (addForm && addForm.style.display === 'block') {
+            addForm.style.display = 'none';
+        }
+    }
+    
+    // Ctrl+N for new complaint
+    if (event.ctrlKey && event.key === 'n') {
+        event.preventDefault();
+        toggleForm('form-tambah');
+    }
+});
+
+// Print functionality
+function printDetail(pengaduanId) {
+    const detailContent = document.getElementById('detail-' + pengaduanId);
+    const printWindow = window.open('', '_blank');
+    
+    printWindow.document.write(`
+        <html>
+        <head>
+            <title>Detail Pengaduan #${pengaduanId}</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 20px; }
+                .section { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
+                .section h3 { margin-top: 0; color: #333; border-bottom: 2px solid #eee; padding-bottom: 8px; }
+                .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }
+                .field { margin-bottom: 10px; }
+                .field label { font-weight: bold; color: #555; display: block; margin-bottom: 5px; }
+                .field p { margin: 0; color: #333; }
+                @media print { body { margin: 0; } }
+            </style>
+        </head>
+        <body>
+            <h1>Detail Pengaduan #${pengaduanId}</h1>
+            ${detailContent.querySelector('.p-6.space-y-6').innerHTML}
+        </body>
+        </html>
+    `);
+    
+    printWindow.document.close();
+    printWindow.print();
+}
+
+// Export functionality (basic CSV export)
+function exportToCSV() {
+    const table = document.querySelector('table');
+    const rows = table.querySelectorAll('tr');
+    let csv = [];
+    
+    // Headers
+    const headers = [];
+    rows[0].querySelectorAll('th').forEach(th => {
+        headers.push(th.textContent.trim());
+    });
+    csv.push(headers.join(','));
+    
+    // Data rows
+    for (let i = 1; i < rows.length; i++) {
+        const row = [];
+        const cells = rows[i].querySelectorAll('td');
+        
+        cells.forEach((cell, index) => {
+            if (index < 6) { // Skip action column
+                let text = cell.textContent.trim().replace(/\n\s+/g, ' ');
+                row.push(`"${text}"`);
+            }
+        });
+        
+        if (row.length > 0) {
+            csv.push(row.join(','));
+        }
+    }
+    
+    // Download CSV
+    const csvContent = csv.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', `data_pengaduan_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Search functionality
+function searchTable() {
+    const searchInput = document.getElementById('search-input');
+    if (!searchInput) return;
+    
+    const filter = searchInput.value.toLowerCase();
+    const table = document.querySelector('tbody');
+    const rows = table.querySelectorAll('tr');
+    
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        if (text.includes(filter)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+// Status filter
+function filterByStatus(status) {
+    const table = document.querySelector('tbody');
+    const rows = table.querySelectorAll('tr');
+    
+    rows.forEach(row => {
+        if (status === 'all') {
+            row.style.display = '';
+        } else {
+            const statusCell = row.querySelector('td:nth-child(6) span');
+            if (statusCell && statusCell.textContent.toLowerCase().includes(status.toLowerCase())) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        }
+    });
+}
+</script>
+
+<!-- Additional CSS for enhanced styling -->
+<style>
+.card-hover {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Smooth animations for modals */
+[id^="detail-"], [id^="form-edit-"] {
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Enhanced form styling */
+input:focus, select:focus, textarea:focus {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Status badge animations */
+.status-badge {
+    transition: all 0.2s ease;
+}
+
+.status-badge:hover {
+    transform: scale(1.05);
+}
+
+/* Button hover effects */
+button {
+    transition: all 0.2s ease;
+}
+
+button:hover {
+    transform: translateY(-1px);
+}
+
+/* Table row animations */
+tbody tr {
+    transition: all 0.2s ease;
+}
+
+/* Loading spinner for buttons */
+.loading-spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+    .grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .max-w-4xl {
+        margin: 1rem;
+        max-width: calc(100% - 2rem);
+    }
+    
+    .overflow-x-auto {
+        overflow-x: scroll;
+    }
+    
+    table {
+        min-width: 700px;
+    }
+}
+
+/* Print styles */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    
+    body {
+        font-size: 12px;
+    }
+    
+    .bg-gradient-to-r {
+        background: #333 !important;
+        color: white !important;
+    }
+}
+</style>
+
+{% endblock %}

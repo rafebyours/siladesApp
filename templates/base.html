@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en" x-data="{ sidebarOpen: false, sidebarCollapsed: false, profileDropdown: false }" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Lades Cibodas{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs" defer></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-green': '#009c57',
+                        'soft-green': '#e6f7ef'
+                    },
+                    fontFamily: {
+                        sans: ['"Segoe UI"', 'Roboto', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .sidebar-bg { background-color: #ffffff; }
+        .nav-item {
+            background-color: rgba(0, 0, 0, 0.03);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        .nav-item:hover {
+            background-color: #e6f7ef;
+            transform: translateX(4px);
+        }
+        .nav-item.active {
+            background-color: #009c57 !important;
+            color: white !important;
+            transform: translateX(4px);
+            border-radius: 12px;
+        }
+        .nav-item.active span { color: white !important; }
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border-left: 12px solid rgba(255, 255, 255, 0.3);
+            border-top: 12px solid transparent;
+            border-bottom: 12px solid transparent;
+        }
+        .sidebar-text { color: rgb(0, 0, 0); }
+        .card-hover {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .card-hover:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+        }
+        .emoji-bounce {
+            animation: emojiBounce 2s ease-in-out infinite;
+        }
+        @keyframes emojiBounce {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-3px) scale(1.1); }
+        }
+        .sidebar-collapsed {
+            width: 80px;
+            transition: width 0.3s ease;
+        }
+        .sidebar-expanded {
+            width: 288px;
+            transition: width 0.3s ease;
+        }
+        .profile-dropdown {
+            display: none;
+        }
+        .profile-dropdown.show {
+            display: block;
+        }
+    </style>
+</head>
+<body class="h-full font-sans text-gray-800 bg-white">
+
+    <!-- Header -->
+    <header class="bg-[#009c57] px-6 py-4 flex justify-between items-center text-white h-16">
+        <div class="flex items-center space-x-3">
+            <div class="bg-white p-1 rounded">
+                <img src="/static/logoo.png" alt="Logo" class="h-8">
+            </div>
+            <span class="text-xl font-bold">Lades Cibodas</span>
+        </div>
+
+        <div class="flex items-center space-x-3 relative">
+            <span>Selamat Datang,</span>
+            <span class="font-semibold">
+                {% if user and user.nama_lengkap %}
+                    {{ user.nama_lengkap }}
+                {% endif %}
+            </span>
+            
+            <!-- Profile Picture with Dropdown Toggle -->
+            <div class="relative">
+                <button @click="profileDropdown = !profileDropdown" class="focus:outline-none">
+                    {% if user and user.foto_profil %}
+                        <img src="{{ user.foto_profil }}" 
+                             class="h-10 w-10 rounded-full border-2 border-white cursor-pointer" 
+                             alt="Avatar">
+                    {% else %}
+                        <div class="h-10 w-10 bg-white text-[#009c57] rounded-full flex items-center justify-center font-bold cursor-pointer">
+                            {% if user and user.nama_lengkap %}
+                                {{ user.nama_lengkap[0]|upper }}
+                            {% else %}
+                                A
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </button>
+                
+                <!-- Dropdown Menu -->
+                <div x-show="profileDropdown" 
+                     @click.away="profileDropdown = false"
+                     x-transition:enter="transition ease-out duration-100"
+                     x-transition:enter-start="transform opacity-0 scale-95"
+                     x-transition:enter-end="transform opacity-100 scale-100"
+                     x-transition:leave="transition ease-in duration-75"
+                     x-transition:leave-start="transform opacity-100 scale-100"
+                     x-transition:leave-end="transform opacity-0 scale-95"
+                     class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                    <a href="{{ url_for('profile') }}" 
+                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-[#e6f7ef]">
+                       Profil Saya
+                    </a>
+                    <a href="{{ url_for('logout') }}" 
+                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-[#e6f7ef]">
+                       Keluar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Sidebar + Main Content -->
+    <div class="flex h-[calc(100vh-4rem)]">
+
+        <!-- Sidebar -->
+        <aside x-data 
+               :class="sidebarCollapsed ? 'sidebar-collapsed' : 'sidebar-expanded'"
+               class="sidebar-bg shadow-2xl h-full flex flex-col overflow-hidden">
+            <nav class="p-6 space-y-2 flex-1" :class="sidebarCollapsed ? 'px-3' : 'px-6'">
+                <!-- Menu Items -->
+                <a href="{{ url_for('dashboard') }}"
+                    class="nav-item {% if request.endpoint == 'dashboard' %}active{% endif %} flex items-center py-3 rounded-xl sidebar-text transition"
+                    :class="sidebarCollapsed ? 'justify-center' : 'space-x-3 px-4'" :title="sidebarCollapsed ? 'Dashboard' : ''">
+                    <span class="text-xl">🏠</span>
+                    <span x-show="!sidebarCollapsed" x-transition class="font-medium text-sm">Dashboard</span>
+                </a>
+
+                <a href="{{ url_for('pengajuan_surat') }}"
+                    class="nav-item {% if request.endpoint == 'pengajuan_surat' %}active{% endif %} flex items-center py-3 rounded-xl sidebar-text transition"
+                    :class="sidebarCollapsed ? 'justify-center' : 'space-x-3 px-4'" :title="sidebarCollapsed ? 'Pengajuan Surat' : ''">
+                    <span class="text-xl">📄</span>
+                    <span x-show="!sidebarCollapsed" x-transition class="font-medium text-sm">Pengajuan Surat</span>
+                </a>
+
+                <a href="{{ url_for('legalisir') }}"
+                    class="nav-item {% if request.endpoint == 'legalisir' %}active{% endif %} flex items-center py-3 rounded-xl sidebar-text transition"
+                    :class="sidebarCollapsed ? 'justify-center' : 'space-x-3 px-4'" :title="sidebarCollapsed ? 'Legalisir' : ''">
+                    <span class="text-xl">📁</span>
+                    <span x-show="!sidebarCollapsed" x-transition class="font-medium text-sm">Legalisir</span>
+                </a>
+
+                <a href="{{ url_for('pengaduan') }}"
+                    class="nav-item {% if request.endpoint == 'pengaduan' %}active{% endif %} flex items-center py-3 rounded-xl sidebar-text transition"
+                    :class="sidebarCollapsed ? 'justify-center' : 'space-x-3 px-4'" :title="sidebarCollapsed ? 'Pengaduan' : ''">
+                    <span class="text-xl">📣</span>
+                    <span x-show="!sidebarCollapsed" x-transition class="font-medium text-sm">Pengaduan</span>
+                </a>
+
+                <a href="{{ url_for('feedback') }}"
+                    class="nav-item {% if request.endpoint == 'feedback' %}active{% endif %} flex items-center py-3 rounded-xl sidebar-text transition"
+                    :class="sidebarCollapsed ? 'justify-center' : 'space-x-3 px-4'" :title="sidebarCollapsed ? 'Feedback' : ''">
+                    <span class="text-xl">💬</span>
+                    <span x-show="!sidebarCollapsed" x-transition class="font-medium text-sm">Feedback</span>
+                </a>
+
+                <!-- Toggle Button -->
+                <div class="pt-4 border-t border-white/20">
+                    <button @click="sidebarCollapsed = !sidebarCollapsed"
+                        class="w-full flex items-center py-3 rounded-xl sidebar-text transition-all duration-200 hover:bg-white hover:bg-opacity-30"
+                        :class="sidebarCollapsed ? 'justify-center' : 'space-x-3 px-4'">
+                        <span class="text-xl" x-text="sidebarCollapsed ? '➡️' : '⬅️'"></span>
+                        <span x-show="!sidebarCollapsed" x-transition class="font-medium text-sm">Sembunyikan Menu</span>
+                    </button>
+                </div>
+
+                <!-- Logout Button -->
+                <div class="pt-6 mt-6 border-t-2 border-white/20">
+                    <a href="{{ url_for('logout') }}"
+                        class="flex items-center py-3 rounded-xl bg-white/20 hover:bg-white/30 text-black transition-all duration-200 hover:transform hover:scale-105"
+                        :class="sidebarCollapsed ? 'justify-center' : 'space-x-3 px-4'" :title="sidebarCollapsed ? 'Logout' : ''">
+                        <span class="text-xl">🚪</span>
+                        <span x-show="!sidebarCollapsed" x-transition class="font-medium text-sm">Logout</span>
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main content -->
+        <div class="flex-1 overflow-y-auto bg-white">
+            <main class="p-6">
+                {% block content %}
+                {% endblock %}
+            </main>
+        </div>
+    </div>
+</body>
+</html>

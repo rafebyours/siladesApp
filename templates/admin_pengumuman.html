@@ -1,0 +1,436 @@
+{% extends 'admin_base.html' %}
+{% block content %}
+
+<!-- Notifikasi -->
+<div id="notification" class="mb-6">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="mb-4 p-4 rounded-lg flex items-center
+            {% if category == 'success' %} bg-green-100 text-green-800 border border-green-200
+            {% elif category == 'error' %} bg-red-100 text-red-800 border border-red-200
+            {% else %} bg-green-100 text-green-800 border border-green-200 {% endif %}">
+          <span class="mr-2">
+            {% if category == 'success' %} ✅
+            {% elif category == 'error' %} ❌
+            {% else %} ⚠️ {% endif %}
+          </span>
+          <span class="font-medium">{{ message }}</span>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+</div>
+
+<!-- Auto dismiss JS -->
+<script>
+  setTimeout(() => {
+    const notif = document.getElementById('notification');
+    if (notif) notif.style.display = 'none';
+  }, 5000);
+</script>
+
+<!-- Kontainer Utama dengan lebar seragam -->
+<div class="w-full max-w-7xl mx-auto p-6">
+    <!-- Header -->
+    <div class="mb-8">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold bg-gradient-to-r from-blue-500 to-green-500 bg-clip-text text-transparent">
+                    Manajemen Pengumuman
+                </h1>
+                <p class="text-gray-600 mt-1">Kelola pengumuman dan informasi sistem</p>
+            </div>
+            <button type="button" onclick="toggleForm('form-tambah')" class="px-6 py-3 bg-gradient-to-r from-blue-500 to-green-500 text-white font-semibold rounded-full hover:shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center">
+                <span class="mr-2">📢</span>
+                Tambah Pengumuman
+            </button>
+        </div>
+    </div>
+
+    <!-- Form Tambah/Edit (Hidden by default) -->
+    <div id="form-tambah" style="display:none;" class="bg-white rounded-2xl shadow-lg border border-gray-100 mb-8">
+        <div class="p-6 border-b border-gray-100">
+            <h2 class="text-xl font-bold text-gray-800 flex items-center">
+                <span class="text-2xl mr-2">📝</span>
+                {% if action == 'edit' and data %}Edit Pengumuman{% else %}Tambah Pengumuman Baru{% endif %}
+            </h2>
+            <p class="text-gray-600 mt-1">Lengkapi formulir berikut untuk {% if action == 'edit' and data %}mengubah{% else %}menambah{% endif %} pengumuman</p>
+        </div>
+        
+        <div class="p-6">
+            <form method="POST" 
+                  action="{% if action == 'edit' and data %}{{ url_for('admin_pengumuman_edit', id=data.pengumuman_id) }}{% else %}{{ url_for('admin_pengumuman_tambah') }}{% endif %}" 
+                  class="space-y-6" enctype="multipart/form-data">
+                
+                <!-- Section: Informasi Utama -->
+                <div class="bg-blue-50 rounded-xl p-6 border border-blue-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                        <span class="mr-2">📋</span>
+                        Informasi Pengumuman
+                    </h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Judul Pengumuman</label>
+                            <input type="text" name="judul" required 
+                                   value="{% if action == 'edit' and data %}{{ data.judul }}{% endif %}"
+                                   class="w-full px-4 py-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white"
+                                   placeholder="Masukkan judul pengumuman" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Isi Pengumuman</label>
+                            <textarea name="isi" required rows="6"
+                                     class="w-full px-4 py-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white resize-none"
+                                     placeholder="Masukkan isi pengumuman...">{% if action == 'edit' and data %}{{ data.isi }}{% endif %}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section: File Lampiran -->
+                <div class="bg-green-50 rounded-xl p-6 border border-green-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                        <span class="mr-2">📎</span>
+                        File Lampiran
+                    </h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                Upload File 
+                                {% if action == 'edit' and data %}(biarkan kosong jika tidak diubah){% else %}(opsional){% endif %}
+                            </label>
+                            <input type="file" name="file_lampiran" 
+                                   accept=".pdf,.docx,.jpg,.jpeg,.png,.gif,.bmp"
+                                   class="w-full px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white" />
+                            <p class="text-xs text-gray-500 mt-1">Format yang didukung: PDF, DOCX, JPG, JPEG, PNG, GIF, BMP</p>
+                        </div>
+                        
+                        {% if action == 'edit' and data and data.file_lampiran %}
+                        <div class="bg-white rounded-lg p-4 border border-green-200">
+                            <p class="text-sm font-medium text-gray-700 mb-2">File saat ini:</p>
+                            <a href="{{ url_for('download_pengumuman', filename=data.file_lampiran) }}" 
+                               target="_blank"
+                               class="inline-flex items-center px-3 py-2 bg-green-100 text-green-800 text-sm font-medium rounded-lg hover:bg-green-200 transition-colors duration-200">
+                                <span class="mr-1">📄</span>
+                                Download Lampiran
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="flex justify-end pt-6 space-x-3">
+                    <button type="button" onclick="toggleForm('form-tambah')" class="px-6 py-3 bg-gray-500 text-white font-semibold rounded-lg hover:bg-gray-600 transition-all duration-200">
+                        ❌ Batal
+                    </button>
+                    <button type="submit" class="px-8 py-3 bg-gradient-to-r from-blue-500 to-green-500 text-white font-semibold rounded-lg hover:shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center">
+                        <span class="mr-2">💾</span>
+                        {% if action == 'edit' and data %}Simpan Perubahan{% else %}Tambah Pengumuman{% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tabel Data -->
+    <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+        <div class="p-6 border-b border-gray-100">
+            <h2 class="text-xl font-bold text-gray-800 flex items-center">
+                <span class="text-2xl mr-2">📢</span>
+                Daftar Pengumuman
+            </h2>
+            <p class="text-gray-600 mt-1">Kelola semua pengumuman yang telah dibuat</p>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+                    <tr>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">Judul</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">Isi Pengumuman</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">File Lampiran</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    {% if pengumuman %}
+                        {% for p in pengumuman %}
+                        <tr class="transition-all duration-200 card-hover hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100">
+                            <td class="px-6 py-4">
+                                <div class="text-sm font-medium text-gray-900">{{ p.judul }}</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="text-sm text-gray-600 max-w-xs">
+                                    <p class="truncate">{{ p.isi|truncate(100, True) }}</p>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% if p.file_lampiran %}
+                                    <a href="{{ url_for('download_pengumuman', filename=p.file_lampiran) }}" 
+                                       target="_blank"
+                                       class="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full hover:bg-blue-200 transition-colors duration-200">
+                                        <span class="mr-1">📄</span>
+                                        Download
+                                    </a>
+                                {% else %}
+                                    <span class="inline-flex items-center px-3 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-full">
+                                        <span class="mr-1">📄</span>
+                                        Tidak ada
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex space-x-2">
+                                    <button onclick="showDetail('{{ p.pengumuman_id }}')" 
+                                            class="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full hover:bg-blue-200 transition-colors duration-200" 
+                                            title="Detail">
+                                        👁️
+                                    </button>
+                                    <a href="{{ url_for('admin_pengumuman_edit', id=p.pengumuman_id) }}" 
+                                       class="inline-flex items-center px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full hover:bg-yellow-200 transition-colors duration-200" 
+                                       title="Edit">
+                                        ✏️
+                                    </a>
+                                    <form action="{{ url_for('admin_pengumuman_hapus', id=p.pengumuman_id) }}" 
+                                          method="post" style="display:inline;" 
+                                          onsubmit="return confirm('Yakin ingin menghapus pengumuman ini?');">
+                                        <button type="submit" 
+                                                class="inline-flex items-center px-2 py-1 bg-red-100 text-red-800 text-xs font-medium rounded-full hover:bg-red-200 transition-colors duration-200" 
+                                                title="Hapus">
+                                            🗑️
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="px-6 py-4 text-center text-gray-500">
+                                <div class="flex flex-col items-center py-8">
+                                    <span class="text-4xl mb-2">📢</span>
+                                    <p class="text-lg font-medium">Tidak ada pengumuman</p>
+                                    <p class="text-sm text-gray-400 mt-1">Mulai dengan menambah pengumuman baru</p>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modals untuk setiap pengumuman -->
+{% if pengumuman %}
+    {% for p in pengumuman %}
+        <!-- Modal Detail Pengumuman -->
+        <div id="detail-{{ p.pengumuman_id }}" style="display:none;" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-2xl shadow-2xl border border-gray-100 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                <div class="p-6 border-b border-gray-100">
+                    <h2 class="text-xl font-bold text-gray-800 flex items-center">
+                        <span class="text-2xl mr-2">📢</span>
+                        Detail Pengumuman
+                    </h2>
+                    <p class="text-gray-600 mt-1">Informasi lengkap pengumuman</p>
+                </div>
+                
+                <div class="p-6 space-y-6">
+                    <!-- Informasi Pengumuman -->
+                    <div class="bg-blue-50 rounded-xl p-6 border border-blue-200">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                            <span class="mr-2">📋</span>
+                            Informasi Pengumuman
+                        </h3>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="text-sm font-semibold text-gray-600">Judul:</label>
+                                <p class="text-gray-900 font-medium">{{ p.judul }}</p>
+                            </div>
+                            <div>
+                                <label class="text-sm font-semibold text-gray-600">Isi Pengumuman:</label>
+                                <div class="text-gray-900 mt-2 p-4 bg-white rounded-lg border border-blue-200">
+                                    <p class="whitespace-pre-wrap">{{ p.isi }}</p>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-sm font-semibold text-gray-600">Status Dashboard:</label>
+                                <p class="text-gray-900">
+                                    {% if p.tampil_di_dashboard %}
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            <span class="mr-1">✅</span>
+                                            Tampil di Dashboard
+                                        </span>
+                                    {% else %}
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                            <span class="mr-1">❌</span>
+                                            Tidak Tampil di Dashboard
+                                        </span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- File Lampiran -->
+                    {% if p.file_lampiran %}
+                    <div class="bg-green-50 rounded-xl p-6 border border-green-200">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                            <span class="mr-2">📎</span>
+                            File Lampiran
+                        </h3>
+                        <div class="flex items-center space-x-4">
+                            <div class="flex-shrink-0">
+                                <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                    <span class="text-2xl">📄</span>
+                                </div>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-gray-900">File tersedia</p>
+                                <p class="text-sm text-gray-500">Klik tombol download untuk mengunduh</p>
+                            </div>
+                            <div>
+                                <a href="{{ url_for('download_pengumuman', filename=p.file_lampiran) }}" 
+                                   target="_blank"
+                                   class="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors duration-200">
+                                    <span class="mr-2">⬇️</span>
+                                    Download
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="p-6 border-t border-gray-100">
+                    <button onclick="hideDetail('{{ p.pengumuman_id }}')" class="px-6 py-3 bg-gray-500 text-white font-semibold rounded-lg hover:bg-gray-600 transition-all duration-200">
+                        ❌ Tutup
+                    </button>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+{% endif %}
+
+<!-- JavaScript Functions -->
+<script>
+function toggleForm(formId) {
+    const form = document.getElementById(formId);
+    if (form.style.display === 'none' || form.style.display === '') {
+        form.style.display = 'block';
+        form.scrollIntoView({ behavior: 'smooth' });
+    } else {
+        form.style.display = 'none';
+    }
+}
+
+function showDetail(pengumumanId) {
+    document.getElementById('detail-' + pengumumanId).style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+function hideDetail(pengumumanId) {
+    document.getElementById('detail-' + pengumumanId).style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+// Close modal when clicking outside
+document.addEventListener('click', function(event) {
+    if (event.target.classList.contains('fixed')) {
+        const modalId = event.target.id;
+        if (modalId.startsWith('detail-')) {
+            const pengumumanId = modalId.replace('detail-', '');
+            hideDetail(pengumumanId);
+        }
+    }
+});
+
+// Escape key to close modals
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        const detailModals = document.querySelectorAll('[id^="detail-"]');
+        
+        detailModals.forEach(modal => {
+            if (modal.style.display === 'flex') {
+                const pengumumanId = modal.id.replace('detail-', '');
+                hideDetail(pengumumanId);
+            }
+        });
+    }
+});
+
+
+
+</script>
+{% if action == 'edit' and data %}
+document.addEventListener('DOMContentLoaded', function() {
+    toggleForm('form-tambah');
+});
+{% endif %}
+</script>
+
+<style>
+.card-hover {
+    transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* Custom scrollbar for modals */
+.overflow-y-auto::-webkit-scrollbar {
+    width: 6px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* Animation for modals */
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.fixed .bg-white {
+    animation: fadeInScale 0.2s ease-out;
+}
+
+/* Custom textarea resize */
+textarea.resize-none {
+    resize: none;
+}
+
+/* Text truncation */
+.truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Improve text readability in detail modal */
+.whitespace-pre-wrap {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+</style>
+
+{% endblock %}

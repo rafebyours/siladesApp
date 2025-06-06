@@ -1,0 +1,8 @@
+flask
+pymysql
+python-dotenv
+boto3
+flask-wtf
+wtforms
+werkzeug
+python-dotenv

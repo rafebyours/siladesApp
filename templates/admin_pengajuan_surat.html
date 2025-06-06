@@ -1,0 +1,1010 @@
+{% extends 'admin_base.html' %}
+{% block content %}
+
+<!-- Notifikasi -->
+<div id="notification" class="mb-6">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="mb-4 p-4 rounded-lg flex items-center
+            {% if category == 'success' %} bg-green-100 text-green-800 border border-green-200
+            {% elif category == 'error' %} bg-red-100 text-red-800 border border-red-200
+            {% else %} bg-green-100 text-green-800 border border-green-200 {% endif %}">
+          <span class="mr-2">
+            {% if category == 'success' %} ✅
+            {% elif category == 'error' %} ❌
+            {% else %} ✅ {% endif %}
+          </span>
+          <span class="font-medium">{{ message }}</span>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+</div>
+
+<!-- Auto dismiss JS -->
+<script>
+  setTimeout(() => {
+    const notif = document.getElementById('notification');
+    if (notif) notif.style.display = 'none';
+  }, 5000);
+</script>
+
+<!-- Kontainer Utama dengan lebar seragam -->
+<div class="w-full max-w-7xl mx-auto">
+ <!-- Header -->
+<div class="mb-8">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1
+  class="text-3xl font-bold bg-gradient-to-r from-primary-blue to-primary-green"
+  style="background-clip: text; -webkit-background-clip: text; color: transparent;"
+>
+  Daftar Pengajuan Surat
+</h1>
+      <p class="text-gray-600 mt-1">Kelola data permohonan pengajuan surat</p>
+    </div>
+    <button type="button" onclick="toggleForm('form-tambah')" class="px-6 py-3 bg-gradient-to-r from-blue-500 to-green-500 text-white font-semibold rounded-full hover:shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center">
+      <span class="mr-2">➕</span>
+      Tambah Pengajuan
+    </button>
+  </div>
+</div>
+
+<!-- Form Tambah (Hidden by default) -->
+<div id="form-tambah" style="display: none;" class="bg-white rounded-2xl shadow-lg border border-gray-100 mb-8">
+    <div class="p-6 border-b border-gray-100">
+        <h2 class="text-xl font-bold text-gray-800 flex items-center">
+            <span class="text-2xl mr-2">📄</span>
+            Tambah Pengajuan Surat
+        </h2>
+        <p class="text-gray-600 mt-1">Lengkapi formulir berikut untuk menambah pengajuan surat baru</p>
+    </div>
+    
+    <div class="p-6">
+        <form method="POST" action="/admin/pengajuan_surat/tambah" class="space-y-6">
+
+            <!-- Section: Informasi User -->
+            <div class="bg-purple-50 rounded-xl p-6 border border-purple-200">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <span class="mr-2">👤</span>
+                    Informasi User & Surat
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- Input User ID -->
+                    <div>
+                        <label for="user_id" class="block text-sm font-semibold text-gray-700 mb-2">User ID</label>
+                        <input
+                            type="text"
+                            id="user_id"
+                            name="user_id"
+                            required
+                            class="w-full px-4 py-3 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all bg-white"
+                            placeholder="Masukkan ID User"
+                        />
+                    </div>
+
+                    <!-- Dropdown Kategori -->
+                    <div>
+                        <label for="kategori_id" class="block text-sm font-semibold text-gray-700 mb-2">Kategori</label>
+                        <select id="kategori_id" name="kategori_id" onchange="filterJenisSurat()" required
+                            class="w-full px-4 py-3 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all bg-white">
+                            <option value="">-- Pilih Kategori Surat --</option>
+                            <option value="1">Surat Kependudukan</option>
+                            <option value="2">Surat Administrasi & Sosial</option>
+                            <option value="3">Surat Pendidikan & Pekerjaan</option>
+                            <option value="4">Surat Keamanan & Hukum</option>
+                            <option value="5">Surat Pernikahan</option>
+                            <option value="6">Surat Lain-lain / Umum</option>
+                        </select>
+                    </div>
+
+                    <!-- Dropdown Jenis Surat -->
+                    <div>
+                        <label for="jenis_surat_id" class="block text-sm font-semibold text-gray-700 mb-2">Jenis Surat</label>
+                        <select id="jenis_surat_id" name="jenis_surat_id" required
+                            class="w-full px-4 py-3 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all bg-white">
+                            <option value="">-- Pilih Jenis Surat --</option>
+                            <!-- Kategori 1: Surat Kependudukan -->
+                            <option value="52" data-kategori="1">Surat Keterangan Domisili</option>
+                            <option value="53" data-kategori="1">Surat Keterangan Pindah Datang / Pindah Keluar</option>
+                            <option value="54" data-kategori="1">Surat Keterangan Tempat Tinggal (sementara)</option>
+                            <option value="55" data-kategori="1">Surat Pengantar Pembuatan KTP</option>
+                            <option value="56" data-kategori="1">Surat Pengantar Pembuatan KK</option>
+                            <option value="57" data-kategori="1">Surat Keterangan Lahir</option>
+                            <option value="58" data-kategori="1">Surat Keterangan Kematian</option>
+                            <option value="59" data-kategori="1">Surat Keterangan Belum Menikah</option>
+                            <option value="60" data-kategori="1">Surat Keterangan Janda / Duda</option>
+                            <option value="61" data-kategori="1">Surat Keterangan Cerai dari Adat / Desa</option>
+                            <option value="62" data-kategori="1">Surat Keterangan Beda Nama / Beda Tanggal Lahir</option>
+                            <option value="63" data-kategori="1">Surat Keterangan Penghasilan</option>
+                            
+                            <!-- Kategori 2: Surat Administrasi & Sosial -->
+                            <option value="64" data-kategori="2">Surat Keterangan Tidak Mampu (SKTM)</option>
+                            <option value="65" data-kategori="2">Surat Keterangan Usaha (SKU)</option>
+                            <option value="66" data-kategori="2">Surat Keterangan Kehilangan (pengantar ke Polsek)</option>
+                            <option value="67" data-kategori="2">Surat Keterangan Kepemilikan Tanah</option>
+                            <option value="68" data-kategori="2">Surat Keterangan Ahli Waris</option>
+                            <option value="69" data-kategori="2">Surat Keterangan Warisan</option>
+                            <option value="70" data-kategori="2">Surat Keterangan Hibah Tanah / Rumah</option>
+                            <option value="71" data-kategori="2">Surat Keterangan Riwayat Tanah</option>
+                            <option value="72" data-kategori="2">Surat Keterangan Tanah dalam Sengketa</option>
+                            <option value="73" data-kategori="2">Surat Keterangan Penguasaan Fisik Bidang Tanah</option>
+                            <option value="74" data-kategori="2">Surat Keterangan Izin Keramaian</option>
+                            <option value="75" data-kategori="2">Surat Keterangan Izin Bangunan (pengantar IMB/PBG)</option>
+                            <option value="76" data-kategori="2">Surat Keterangan Izin Usaha Mikro Kecil (IUMK)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section: Data Pribadi -->
+            <div class="bg-green-50 rounded-xl p-6 border border-green-200">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <span class="mr-2">👤</span>
+                    Data Pribadi
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Nama Lengkap</label>
+                        <input name="nama_pemohon" required type="text" 
+                               class="w-full px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white"
+                               placeholder="Masukkan nama lengkap">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">NIK</label>
+                        <input name="nik_pemohon" required type="text" 
+                               class="w-full px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white"
+                               placeholder="Masukkan NIK">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Tempat Lahir</label>
+                        <input name="tempat_lahir" required type="text" 
+                               class="w-full px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white"
+                               placeholder="Masukkan tempat lahir">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Tanggal Lahir</label>
+                        <input name="tanggal_lahir" required type="date" 
+                               class="w-full px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Jenis Kelamin</label>
+                        <select name="jenis_kelamin" required 
+                                class="w-full px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white">
+                            <option value="">-- Pilih --</option>
+                            <option value="Laki-laki">Laki-laki</option>
+                            <option value="Perempuan">Perempuan</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Agama</label>
+                        <select name="agama" required 
+                                class="w-full px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white">
+                            <option value="">-- Pilih Agama --</option>
+                            <option value="Islam">Islam</option>
+                            <option value="Kristen">Kristen</option>
+                            <option value="Katolik">Katolik</option>
+                            <option value="Hindu">Hindu</option>
+                            <option value="Buddha">Buddha</option>
+                            <option value="Konghucu">Konghucu</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Alamat Lengkap</label>
+                    <textarea name="alamat_lengkap" required rows="3"
+                              class="w-full px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white"
+                              placeholder="Masukkan alamat lengkap"></textarea>
+                </div>
+            </div>
+
+            <!-- Section: Data Lainnya -->
+            <div class="bg-yellow-50 rounded-xl p-6 border border-yellow-200">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <span class="mr-2">📋</span>
+                    Data Lainnya
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Status Perkawinan</label>
+                        <select name="status_perkawinan" required 
+                                class="w-full px-4 py-3 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all bg-white">
+                            <option value="">-- Pilih Status --</option>
+                            <option value="Belum Kawin">Belum Kawin</option>
+                            <option value="Kawin">Kawin</option>
+                            <option value="Cerai Hidup">Cerai Hidup</option>
+                            <option value="Cerai Mati">Cerai Mati</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Kewarganegaraan</label>
+                        <select name="kewarganegaraan" required 
+                                class="w-full px-4 py-3 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all bg-white">
+                            <option value="">-- Pilih --</option>
+                            <option value="WNI">WNI (Warga Negara Indonesia)</option>
+                            <option value="WNA">WNA (Warga Negara Asing)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">No. Kartu Keluarga</label>
+                        <input name="no_kk" required type="text" 
+                               class="w-full px-4 py-3 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all bg-white"
+                               placeholder="Masukkan No. KK">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Pekerjaan</label>
+                        <input name="pekerjaan" required type="text" 
+                               class="w-full px-4 py-3 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all bg-white"
+                               placeholder="Masukkan pekerjaan">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section: Informasi Tambahan -->
+            <div class="bg-blue-50 rounded-xl p-6 border border-blue-200">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <span class="mr-2">📝</span>
+                    Informasi Tambahan
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Instansi/Perusahaan</label>
+                        <input type="text" name="instansi" required 
+                               class="w-full px-4 py-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white"
+                               placeholder="Nama instansi/perusahaan" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Keperluan</label>
+                        <textarea name="keperluan" required rows="3"
+                                  class="w-full px-4 py-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white"
+                                  placeholder="Jelaskan keperluan surat ini"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="flex justify-end pt-6 space-x-3">
+                <button type="button" onclick="toggleForm('form-tambah')" class="px-6 py-3 bg-gray-500 text-white font-semibold rounded-lg hover:bg-gray-600 transition-all duration-200">
+                    ❌ Batal
+                </button>
+                <button type="submit" class="px-8 py-3 bg-gradient-to-r from-blue-500 to-green-500 text-white font-semibold rounded-lg hover:shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center">
+                    <span class="mr-2">💾</span>
+                    Simpan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tabel Data -->
+<div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+   <div class="p-6 border-b border-gray-100">
+        <h2 class="text-xl font-bold text-gray-800 flex items-center">
+            <span class="text-2xl mr-2">📊</span>
+            Data Pengajuan Surat
+        </h2>
+        <p class="text-gray-600 mt-1">Daftar semua permohonan pengajuan surat</p>
+    </div>
+    
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+                <tr>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">ID</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">Nama Pemohon</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">NIK</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">Kategori Surat</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">Jenis Surat</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">Status</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">Aksi</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                {% for p in pengajuan_list %}
+                <tr class="
+    transition-all duration-200 card-hover
+    {% if p.status == 'pending' %}bg-yellow-50
+    {% elif p.status == 'diproses' %}bg-blue-50
+    {% elif p.status == 'selesai' %}bg-green-50
+    {% elif p.status == 'ditolak' %}bg-red-50
+    {% else %}bg-white
+    {% endif %}
+    hover:bg-gradient-to-r hover:from-blue-100 hover:to-blue-200">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <div class="flex items-center justify-center w-8 h-8 bg-gradient-to-r from-blue-100 to-blue-200 rounded-full text-blue-600 font-semibold">
+                        {{ loop.index }}
+                    </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm font-medium text-gray-900">{{ p.nama_pemohon }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-600">{{ p.nik_pemohon }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm font-medium text-gray-900">{{ p.nama_kategori }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm font-medium text-gray-900">{{ p.nama_jenis }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
+                            {% if p.status == 'pending' %}bg-yellow-100 text-yellow-800
+                            {% elif p.status == 'diproses' %}bg-blue-100 text-blue-800
+                            {% elif p.status == 'selesai' %}bg-green-100 text-green-800
+                            {% elif p.status == 'ditolak' %}bg-red-100 text-red-800
+                            {% endif %}">
+                            <span class="mr-1">
+                                {% if p.status == 'pending' %}⏳
+                                {% elif p.status == 'diproses' %}🔄
+                                {% elif p.status == 'selesai' %}✅
+                                {% elif p.status == 'ditolak' %}❌
+                                {% endif %}
+                            </span>
+                            {{ p.status.title() if p.status else 'Pending' }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex space-x-2">
+                            <button onclick="showDetailModal('{{ p.pengajuan_id }}')" 
+                                    class="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full hover:bg-blue-200 transition-colors duration-200" 
+                                    title="Detail">
+                                👁️
+                            </button>
+                            <button onclick="showEditModal('{{ p.pengajuan_id }}')" 
+                                    class="inline-flex items-center px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full hover:bg-yellow-200 transition-colors duration-200" 
+                                    title="Edit">
+                                ✏️
+                            </button>
+                            <form action="{{ url_for('hapus_pengajuan_surat', pengajuan_id=p.pengajuan_id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Yakin hapus?')">
+                                <button type="submit" class="inline-flex items-center px-2 py-1 bg-red-100 text-red-800 text-xs font-medium rounded-full hover:bg-red-200 transition-colors duration-200" title="Hapus">
+                                    🗑️
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Detail - Dipindahkan keluar dari tabel -->
+{% for p in pengajuan_list %}
+<div id="detail-modal-{{ p.pengajuan_id }}" style="display:none;" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onclick="closeModalIfClickedOutside(event, 'detail-modal-{{ p.pengajuan_id }}')">
+    <div class="bg-white rounded-2xl shadow-2xl border border-gray-100 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+        <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+            <div>
+                <h2 class="text-xl font-bold text-gray-800 flex items-center">
+                    <span class="text-2xl mr-2">👁️</span>
+                    Detail Pengajuan Surat #{{ p.pengajuan_id }}
+                </h2>
+                <p class="text-gray-600 mt-1">Informasi lengkap data pengajuan surat</p>
+            </div>
+            <button type="button" onclick="hideDetailModal('{{ p.pengajuan_id }}')" class="text-gray-400 hover:text-gray-600 text-2xl font-bold transition-colors duration-200">
+                ✕
+            </button>
+        </div>
+        
+        <div class="p-6 space-y-6">
+            <!-- Data Pribadi -->
+            <div class="bg-blue-50 rounded-xl p-6 border border-blue-200">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <span class="mr-2">👨‍💼</span>
+                    Data Pribadi
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Nama Pemohon:</label>
+                        <div class="text-gray-900">{{ p.nama_pemohon }}</div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">NIK:</label>
+                        <div class="text-gray-900">{{ p.nik_pemohon }}</div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Tempat Lahir:</label>
+                        <div class="text-gray-900">{{ p.tempat_lahir }}</div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Tanggal Lahir:</label>
+                        <div class="text-gray-900">{{ p.tanggal_lahir }}</div>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Alamat Lengkap:</label>
+                        <div class="text-gray-900">{{ p.alamat_lengkap }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Demografis -->
+            <div class="bg-green-50 rounded-xl p-6 border border-green-200">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <span class="mr-2">📊</span>
+                    Data Demografis
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Jenis Kelamin:</label>
+                        <div class="text-gray-900">{{ p.jenis_kelamin }}</div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Agama:</label>
+                        <div class="text-gray-900">{{ p.agama }}</div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Status Perkawinan:</label>
+                        <div class="text-gray-900">{{ p.status_perkawinan }}</div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Kewarganegaraan:</label>
+                        <div class="text-gray-900">{{ p.kewarganegaraan }}</div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">No KK:</label>
+                        <div class="text-gray-900">{{ p.no_kk }}</div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Pekerjaan:</label>
+                        <div class="text-gray-900">{{ p.pekerjaan }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Informasi Surat & Keperluan -->
+            <div class="bg-yellow-50 rounded-xl p-6 border border-yellow-200">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <span class="mr-2">📝</span>
+                    Informasi Surat & Keperluan
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Kategori Surat:</label>
+                        <div class="text-gray-900">{{ p.nama_kategori }}</div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Jenis Surat:</label>
+                        <div class="text-gray-900">{{ p.nama_jenis }}</div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Instansi:</label>
+                        <div class="text-gray-900">{{ p.instansi }}</div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Status:</label>
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
+                            {% if p.status == 'pending' %}bg-yellow-100 text-yellow-800
+                            {% elif p.status == 'diproses' %}bg-blue-100 text-blue-800
+                            {% elif p.status == 'selesai' %}bg-green-100 text-green-800
+                            {% elif p.status == 'ditolak' %}bg-red-100 text-red-800
+                            {% endif %}">
+                            {{ p.status.title() if p.status else 'Pending' }}
+                        </span>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Keperluan:</label>
+                        <div class="text-gray-900 p-3 bg-white rounded-lg border">{{ p.keperluan }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Modal Edit - Dipindahkan keluar dari tabel -->
+{% for p in pengajuan_list %}
+<div id="form-edit-{{ p.pengajuan_id }}" style="display:none;" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onclick="closeModalIfClickedOutside(event, 'form-edit-{{ p.pengajuan_id }}')">
+    <div class="bg-white rounded-2xl shadow-2xl border border-gray-100 max-w-6xl w-full mx-4 max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+        <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+            <div>
+                <h2 class="text-xl font-bold text-gray-800 flex items-center">
+                    <span class="text-2xl mr-2">✏️</span>
+                    Edit Pengajuan Surat #{{ p.pengajuan_id }}
+                </h2>
+                <p class="text-gray-600 mt-1">Ubah informasi data pengajuan surat</p>
+            </div>
+            <button type="button" onclick="hideEditModal('{{ p.pengajuan_id }}')" class="text-gray-400 hover:text-gray-600 text-2xl font-bold transition-colors duration-200">
+                ✕
+            </button>
+        </div>
+        
+        <div class="p-6">
+            <form method="POST" action="{{ url_for('edit_pengajuan_surat', pengajuan_id=p.pengajuan_id) }}" class="space-y-6">
+                
+                <!-- Section: Informasi User -->
+                <div class="bg-purple-50 rounded-xl p-6 border border-purple-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                        <span class="mr-2">👤</span>
+                        Informasi User & Surat
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">User ID</label>
+                            <input type="text" name="user_id" value="{{ p.user_id }}" required 
+                                    class="w-full px-4 py-3 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all bg-white"
+                                    placeholder="Masukkan ID User" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Kategori ID</label>
+                            <input type="text" name="kategori_id" value="{{ p.kategori_id }}" required 
+                                   class="w-full px-4 py-3 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all bg-white"
+                                   placeholder="Masukkan Kategori ID" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Jenis Surat ID</label>
+                            <input type="text" name="jenis_surat_id" value="{{ p.jenis_surat_id }}" required 
+                                   class="w-full px-4 py-3 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all bg-white"
+                                   placeholder="Masukkan Jenis Surat ID" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section: Data Pribadi -->
+                <div class="bg-blue-50 rounded-xl p-6 border border-blue-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                        <span class="mr-2">👨‍💼</span>
+                        Data Pribadi Pemohon
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Nama Pemohon</label>
+                            <input type="text" name="nama_pemohon" value="{{ p.nama_pemohon }}" required 
+                                   class="w-full px-4 py-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white"
+                                   placeholder="Nama lengkap pemohon" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">NIK Pemohon</label>
+                            <input type="text" name="nik_pemohon" value="{{ p.nik_pemohon }}" required 
+                                   class="w-full px-4 py-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white"
+                                   placeholder="16 digit NIK" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Tempat Lahir</label>
+                            <input type="text" name="tempat_lahir" value="{{ p.tempat_lahir }}" required 
+                                   class="w-full px-4 py-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white"
+                                   placeholder="Kota tempat lahir" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Tanggal Lahir</label>
+                            <input type="date" name="tanggal_lahir" value="{{ p.tanggal_lahir }}" required 
+                                   class="w-full px-4 py-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white" />
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Alamat Lengkap</label>
+                            <textarea name="alamat_lengkap" required rows="3"
+                                      class="w-full px-4 py-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white"
+                                      placeholder="Alamat lengkap sesuai KTP">{{ p.alamat_lengkap }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section: Data Demografis -->
+                <div class="bg-green-50 rounded-xl p-6 border border-green-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                        <span class="mr-2">📊</span>
+                        Data Demografis
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Jenis Kelamin</label>
+                            <select name="jenis_kelamin" required 
+                                   class="w-full px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white">
+                                <option value="">Pilih Jenis Kelamin</option>
+                                <option value="Laki-laki" {% if p.jenis_kelamin == 'Laki-laki' %}selected{% endif %}>Laki-laki</option>
+                                <option value="Perempuan" {% if p.jenis_kelamin == 'Perempuan' %}selected{% endif %}>Perempuan</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Agama</label>
+                            <input type="text" name="agama" value="{{ p.agama }}" required 
+                                   class="w-full px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white"
+                                   placeholder="Agama" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Status Perkawinan</label>
+                            <input type="text" name="status_perkawinan" value="{{ p.status_perkawinan }}" required 
+                                   class="w-full px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white"
+                                   placeholder="Belum Kawin/Kawin/Cerai" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Kewarganegaraan</label>
+                            <input type="text" name="kewarganegaraan" value="{{ p.kewarganegaraan }}" required 
+                                   class="w-full px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white"
+                                   placeholder="WNI/WNA" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">No KK</label>
+                            <input type="text" name="no_kk" value="{{ p.no_kk }}" required 
+                                   class="w-full px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white"
+                                   placeholder="16 digit No KK" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Pekerjaan</label>
+                            <input type="text" name="pekerjaan" value="{{ p.pekerjaan }}" required 
+                                   class="w-full px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white"
+                                   placeholder="Pekerjaan saat ini" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section: Informasi Tambahan -->
+                <div class="bg-yellow-50 rounded-xl p-6 border border-yellow-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                        <span class="mr-2">📝</span>
+                        Informasi Tambahan
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Instansi</label>
+                            <input type="text" name="instansi" value="{{ p.instansi }}" required 
+                                   class="w-full px-4 py-3 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all bg-white"
+                                   placeholder="Nama instansi" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Status</label>
+                            <select name="status" required 
+                                   class="w-full px-4 py-3 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all bg-white">
+                                <option value="pending" {% if p.status == 'pending' %}selected{% endif %}>Pending</option>
+                                <option value="diproses" {% if p.status == 'diproses' %}selected{% endif %}>Diproses</option>
+                                <option value="selesai" {% if p.status == 'selesai' %}selected{% endif %}>Selesai</option>
+                                <option value="ditolak" {% if p.status == 'ditolak' %}selected{% endif %}>Ditolak</option>
+                            </select>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Keperluan</label>
+                            <textarea name="keperluan" required rows="3"
+                                      class="w-full px-4 py-3 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all bg-white"
+                                      placeholder="Jelaskan keperluan surat ini">{{ p.keperluan }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="flex justify-end pt-6 space-x-3">
+                    <button type="button" onclick="hideEditModal('{{ p.pengajuan_id }}')" class="px-6 py-3 bg-gray-500 text-white font-semibold rounded-lg hover:bg-gray-600 transition-all duration-200">
+                        ❌ Batal
+                    </button>
+                    <button type="submit" class="px-8 py-3 bg-gradient-to-r from-blue-500 to-green-500 text-white font-semibold rounded-lg hover:shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center">
+                        <span class="mr-2">💾</span>
+                        Update
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+  </div>
+</div>
+
+
+<script>
+// Fungsi untuk filter jenis surat berdasarkan kategori yang dipilih
+function filterJenisSurat() {
+    const kategoriSelect = document.getElementById('kategori_id');
+    const jenisSuratSelect = document.getElementById('jenis_surat_id');
+    const selectedKategori = kategoriSelect.value;
+    
+    // Reset jenis surat dropdown
+    jenisSuratSelect.value = '';
+    
+    // Loop through all options in jenis surat dropdown
+    const options = jenisSuratSelect.querySelectorAll('option[data-kategori]');
+    
+    options.forEach(option => {
+        if (selectedKategori === '' || option.getAttribute('data-kategori') === selectedKategori) {
+            option.style.display = 'block';
+        } else {
+            option.style.display = 'none';
+        }
+    });
+}
+
+// Fungsi untuk toggle form (jika diperlukan)
+function toggleForm(formId) {
+    const form = document.getElementById(formId);
+    if (form.style.display === 'none') {
+        form.style.display = 'block';
+    } else {
+        form.style.display = 'none';
+    }
+}
+
+// Initialize form saat halaman dimuat
+document.addEventListener('DOMContentLoaded', function() {
+    // Sembunyikan semua opsi jenis surat pada awalnya
+    filterJenisSurat();
+});
+</script>
+
+
+<script>
+    // (Bagian lain tetap seperti semula, hanya 1 `toggleForm`, yang lainnya aku hapus untuk mencegah duplikat)
+    function toggleForm(formId) {
+        const form = document.getElementById(formId);
+        if (form.style.display === 'none' || form.style.display === '') {
+            form.style.display = 'block';
+            if (formId === 'form-tambah') {
+                form.scrollIntoView({ behavior: 'smooth' });
+            }
+        } else {
+            form.style.display = 'none';
+        }
+    }
+
+    function showDetailModal(pengajuanId) {
+        const modal = document.getElementById('detail-modal-' + pengajuanId);
+        if (modal) {
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    function hideDetailModal(pengajuanId) {
+        const modal = document.getElementById('detail-modal-' + pengajuanId);
+        if (modal) {
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+    }
+
+    function closeModalIfClickedOutside(event, modalId) {
+        if (event.target.id === modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+        }
+    }
+
+    function showEditModal(pengajuanId) {
+        const modal = document.getElementById('form-edit-' + pengajuanId);
+        if (modal) {
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    function hideEditModal(pengajuanId) {
+        const modal = document.getElementById('form-edit-' + pengajuanId);
+        if (modal) {
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+    }
+
+    // Escape key untuk menutup semua modal
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            document.querySelectorAll('[id^="detail-modal-"], [id^="form-edit-"]').forEach(modal => {
+                if (modal.style.display === 'flex' || modal.style.display === 'block') {
+                    modal.style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                }
+            });
+
+            const addForm = document.getElementById('form-tambah');
+            if (addForm && addForm.style.display === 'block') {
+                addForm.style.display = 'none';
+            }
+        }
+    });
+
+    // Auto-hide notification
+    document.addEventListener('DOMContentLoaded', function() {
+        const notification = document.getElementById('notification');
+        if (notification && notification.children.length > 0) {
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.style.transition = 'opacity 0.5s ease-out';
+                setTimeout(() => {
+                    notification.style.display = 'none';
+                }, 500);
+            }, 5000);
+        }
+    });
+
+    // Card hover animation
+    document.addEventListener('DOMContentLoaded', function() {
+        const cards = document.querySelectorAll('.card-hover');
+        cards.forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-2px)';
+                this.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
+            });
+
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+                this.style.boxShadow = 'none';
+            });
+        });
+    });
+
+    // Form validation
+    function validateForm(formElement) {
+        const requiredFields = formElement.querySelectorAll('[required]');
+        let isValid = true;
+
+        requiredFields.forEach(field => {
+            if (!field.value.trim()) {
+                field.classList.add('border-red-500');
+                isValid = false;
+            } else {
+                field.classList.remove('border-red-500');
+            }
+        });
+
+        if (!isValid) {
+            alert('Mohon lengkapi semua field yang wajib diisi!');
+            return false;
+        }
+
+        return true;
+    }
+
+    // Apply validation
+    document.addEventListener('DOMContentLoaded', function() {
+        const forms = document.querySelectorAll('form[method="POST"]');
+        forms.forEach(form => {
+            if (form.getAttribute('onsubmit') && form.getAttribute('onsubmit').includes('confirm')) {
+                return;
+            }
+
+            form.addEventListener('submit', function(e) {
+                if (!validateForm(this)) {
+                    e.preventDefault();
+                }
+            });
+        });
+    });
+
+    // NIK dan No KK
+    document.addEventListener('DOMContentLoaded', function() {
+        const nikFields = document.querySelectorAll('input[name="nik_pemohon"], input[name="no_kk"]');
+
+        nikFields.forEach(field => {
+            field.addEventListener('input', function() {
+                this.value = this.value.replace(/\D/g, '');
+
+                if (this.value.length > 16) {
+                    this.value = this.value.slice(0, 16);
+                }
+
+                if (this.value.length === 16) {
+                    this.classList.remove('border-red-500');
+                    this.classList.add('border-green-500');
+                } else if (this.value.length > 0) {
+                    this.classList.remove('border-green-500');
+                    this.classList.add('border-red-500');
+                } else {
+                    this.classList.remove('border-red-500', 'border-green-500');
+                }
+            });
+        });
+    });
+</script>
+
+
+<!-- Custom CSS -->
+<style>
+.card-hover {
+    transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Gradient text animation */
+@keyframes gradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.bg-gradient-to-r.from-primary-blue.to-primary-green {
+    background: linear-gradient(-45deg, #3b82f6, #10b981, #06b6d4, #8b5cf6);
+    background-size: 400% 400%;
+    animation: gradient 15s ease infinite;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(to bottom, #3b82f6, #10b981);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(to bottom, #2563eb, #059669);
+}
+
+/* Modal animations */
+@keyframes fadeIn {
+    from { 
+        opacity: 0; 
+        transform: scale(0.9);
+    }
+    to { 
+        opacity: 1; 
+        transform: scale(1);
+    }
+}
+
+.fixed.inset-0.bg-black.bg-opacity-50 > div {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Loading state for buttons */
+.loading {
+    position: relative;
+    pointer-events: none;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin-top: -10px;
+    margin-left: -10px;
+    border: 2px solid #ffffff;
+    border-top: 2px solid transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Print styles */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    
+    .print-full-width {
+        width: 100% !important;
+        max-width: none !important;
+    }
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .overflow-x-auto {
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .fixed.inset-0 > div {
+        margin: 1rem;
+        max-height: calc(100vh - 2rem);
+    }
+    
+    .grid.grid-cols-1.md\\:grid-cols-2,
+    .grid.grid-cols-1.md\\:grid-cols-3 {
+        grid-template-columns: 1fr !important;
+    }
+}
+</style>
+
+{% endblock %}
